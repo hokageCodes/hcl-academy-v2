@@ -1,7 +1,7 @@
 // Hero section for HCL Academy
 export default function Hero() {
   return (
-    <section className="relative flex flex-col items-center justify-center min-h-[100vh] w-full bg-gradient-purple pt-44 md:pt-56 pb-20 px-2 md:px-0 overflow-hidden">
+    <section className="relative flex flex-col items-center justify-center min-h-[100vh] w-full bg-gradient-purple pt-32 md:pt-56 pb-20 px-2 md:px-0 overflow-hidden">
       {/* SVG background pattern */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <svg width="100%" height="100%" className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">

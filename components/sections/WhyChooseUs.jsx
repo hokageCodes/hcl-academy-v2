@@ -6,11 +6,11 @@ import Image from "next/image";
 const reasons = [
   {
     title: "Industry-Driven Curriculum",
-    desc: "We don’t teach theory in a vacuum. Our syllabus is co-created with tech practitioners to ensure you learn exactly what the market needs.",
+    desc: "Our syllabus is co-created with tech practitioners to ensure you learn exactly what the market needs.",
   },
   {
     title: "Project-Based Learning",
-    desc: "Build real products from day one. Graduate with a professional portfolio that proves your skills to future employers.",
+    desc: "Learn using real products as our guide from day one. Finish strong with a professional portfolio that proves your newly acquired superpowers.",
   },
   {
     title: "Community-Based Learning",

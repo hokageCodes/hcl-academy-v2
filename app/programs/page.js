@@ -1,5 +1,9 @@
 "use client";
+import CommunityVoices from "@/components/sections/CommunityVoices";
+import FAQs from "@/components/sections/FAQs";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import Card from "@/components/ui/Card";
 
 // Calendly Widget Loader
 function CalendlyWidgetLoader() {
@@ -59,121 +63,6 @@ function TalkToAdvisorCTA() {
         <span>Talk to an Advisor</span>
       )}
     </button>
-  );
-}
-
-// Community Voices Component
-function CommunityVoices() {
-  const voices = [
-    {
-      name: "Sarah Johnson",
-      role: "Web Developer",
-      text: "The program completely changed my career trajectory. I went from zero coding knowledge to landing my first developer job in 4 months!",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80"
-    },
-    {
-      name: "Michael Chen",
-      role: "UI/UX Designer",
-      text: "The mentorship and hands-on projects were invaluable. I built a portfolio that got me interviews at top companies.",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80"
-    },
-    {
-      name: "Aisha Bello",
-      role: "Full Stack Developer",
-      text: "Best investment I've made in my career. The instructors are patient, knowledgeable, and truly care about your success.",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80"
-    }
-  ];
-
-  return (
-    <section className="py-20 px-6 bg-gray-50">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-bold text-center mb-4">Community Voices</h2>
-        <p className="text-xl text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-          Hear from our graduates who transformed their careers
-        </p>
-        
-        <div className="grid md:grid-cols-3 gap-8">
-          {voices.map((voice, idx) => (
-            <div key={idx} className="bg-white p-8 rounded-2xl shadow-lg">
-              <div className="flex items-center gap-4 mb-4">
-                <img src={voice.image} alt={voice.name} className="w-16 h-16 rounded-full object-cover" />
-                <div>
-                  <h3 className="font-bold text-lg">{voice.name}</h3>
-                  <p className="text-sm text-gray-600">{voice.role}</p>
-                </div>
-              </div>
-              <p className="text-gray-700 leading-relaxed">{voice.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// FAQs Component
-function FAQs() {
-  const [openIndex, setOpenIndex] = useState(null);
-  
-  const faqs = [
-    {
-      q: "Do I need prior experience?",
-      a: "No prior experience needed! Our programs are designed for complete beginners. We start from the fundamentals and build up your skills progressively."
-    },
-    {
-      q: "How long are the programs?",
-      a: "Programs range from 4 to 8 weeks depending on the track. Each program includes live sessions, hands-on projects, and mentorship."
-    },
-    {
-      q: "What's the time commitment?",
-      a: "Expect to dedicate 10-15 hours per week, including live sessions, practice, and project work. We offer flexible scheduling to fit your lifestyle."
-    },
-    {
-      q: "Will I get a certificate?",
-      a: "Yes! Upon completion, you'll receive a certificate of completion and have a portfolio of projects to showcase to employers."
-    },
-    {
-      q: "What payment options are available?",
-      a: "We offer flexible payment plans including full payment discounts and installment options. Contact an advisor to discuss what works best for you."
-    }
-  ];
-
-  return (
-    <section className="py-20 px-6">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-bold text-center mb-4">Frequently Asked Questions</h2>
-        <p className="text-xl text-gray-600 text-center mb-12">
-          Everything you need to know about our programs
-        </p>
-        
-        <div className="space-y-4">
-          {faqs.map((faq, idx) => (
-            <div key={idx} className="bg-white rounded-xl shadow-md overflow-hidden">
-              <button
-                onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
-                className="w-full px-6 py-5 text-left font-semibold text-lg flex justify-between items-center hover:bg-gray-50 transition-colors"
-              >
-                <span>{faq.q}</span>
-                <svg
-                  className={`w-6 h-6 transition-transform ${openIndex === idx ? 'rotate-180' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {openIndex === idx && (
-                <div className="px-6 pb-5 text-gray-700 leading-relaxed">
-                  {faq.a}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -316,26 +205,27 @@ export default function ProgramsPage() {
         {/* Tabs */}
         <div className="flex gap-4 mb-10 flex-wrap">
           {PROGRAM_TABS.map((tab) => (
-            <button
+            <Button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-6 py-3 rounded-full font-semibold text-base transition-all focus:outline-none focus:ring-2 focus:ring-lime-400/60 ${
+              className={`rounded-full font-semibold text-base px-6 py-3 ${
                 activeTab === tab.key
                   ? "bg-white text-black shadow-lg"
                   : "bg-black/80 text-white hover:bg-black"
               }`}
+              variant={activeTab === tab.key ? "default" : "outline"}
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
 
         {/* Programs Grid */}
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
           {filteredPrograms.map((program) => (
-            <div
+            <Card
               key={program.id}
-              className={`relative flex flex-col h-full rounded-3xl overflow-hidden shadow-2xl transition-transform hover:scale-105 ${
+              className={`relative flex flex-col h-full rounded-3xl overflow-hidden shadow-2xl transition-transform hover:scale-105 p-0 ${
                 program.featured ? "border-2 border-lime-400/80" : ""
               }`}
             >
@@ -391,20 +281,22 @@ export default function ProgramsPage() {
                 {/* Actions */}
                 <div className="flex items-center justify-between">
                   {(program.title === "UI/UX Design Fundamentals" || program.title === "Vibe Coding Essentials") ? (
-                    <button
+                    <Button
                       disabled
-                      className="text-gray-400 font-semibold underline underline-offset-4 text-base transition-colors cursor-not-allowed opacity-60"
+                      variant="link"
+                      className="text-gray-400 font-semibold underline underline-offset-4 text-base cursor-not-allowed opacity-60"
                       type="button"
                     >
                       Apply Now
-                    </button>
+                    </Button>
                   ) : (
-                    <a
-                      href="#apply"
-                      className="text-purple-400 hover:text-purple-300 font-semibold underline underline-offset-4 text-base transition-colors"
+                    <Button
+                      asChild
+                      variant="link"
+                      className="text-purple-400 hover:text-purple-300 font-semibold underline underline-offset-4 text-base"
                     >
-                      Apply Now
-                    </a>
+                      <a href="#apply">Apply Now</a>
+                    </Button>
                   )}
                   {program.price && (
                     <span className="bg-lime-400 text-black text-xs font-bold px-3 py-1 rounded-full shadow">
@@ -413,13 +305,12 @@ export default function ProgramsPage() {
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       </section>
-      
       <CommunityVoices />
-      <FAQs />
+	  <FAQs />
     </main>
   );
 }

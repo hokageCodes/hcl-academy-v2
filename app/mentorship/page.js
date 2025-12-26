@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Check, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Card from "@/components/ui/Card";
 
 export default function MentorshipPage() {
   const [form, setForm] = useState({
@@ -40,6 +42,8 @@ export default function MentorshipPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center py-40 px-4">
+      <title>Mentorship | Hokage Academy</title>
+      <meta name="description" content="Apply for personalized 1-on-1 mentorship with an expert at Hokage Academy. Get guidance, support, and accelerate your growth." />
       <div className="max-w-2xl w-full relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
@@ -52,7 +56,7 @@ export default function MentorshipPage() {
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+        <Card className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden text-left p-0">
           {submitted ? (
             <div className="p-12 text-center">
               <div className="w-20 h-20 bg-green-400 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -62,7 +66,7 @@ export default function MentorshipPage() {
               <p className="text-gray-600 text-lg mb-8">
                 Thank you for applying! We'll review your application and get back to you within 2-3 business days.
               </p>
-              <button
+              <Button
                 onClick={() => {
                   setSubmitted(false);
                   setStep(1);
@@ -74,10 +78,11 @@ export default function MentorshipPage() {
                     availability: "",
                   });
                 }}
+                variant="link"
                 className="text-green-600 hover:text-green-700 font-semibold"
               >
                 Submit another application
-              </button>
+              </Button>
             </div>
           ) : (
             <>
@@ -239,28 +244,29 @@ export default function MentorshipPage() {
                 {/* Action Buttons */}
                 <div className="flex gap-3">
                   {step > 1 && (
-                    <button
+                    <Button
                       onClick={handleBack}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-4 rounded-xl transition-all duration-300"
+                      variant="outline"
+                      className="flex-1 flex items-center justify-center gap-2 py-4"
                     >
                       <ArrowLeft className="w-5 h-5" />
                       <span>Back</span>
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button
                     onClick={step === 3 ? handleSubmit : handleNext}
-                    className={`flex items-center justify-center gap-2 bg-black hover:bg-gray-800 text-white font-semibold py-4 rounded-xl transition-all duration-300 hover:scale-105 ${
+                    className={`flex items-center justify-center gap-2 py-4 font-semibold rounded-xl transition-all duration-300 ${
                       step === 1 ? "w-full" : "flex-1"
                     }`}
                   >
                     <span>{step === 3 ? "Submit Application" : "Continue"}</span>
                     {step < 3 && <ArrowRight className="w-5 h-5" />}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </>
           )}
-        </div>
+        </Card>
 
         {/* Footer Note */}
         {!submitted && (

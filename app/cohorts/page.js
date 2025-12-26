@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import Card from "@/components/ui/Card";
 
 export default function CohortsPage() {
-
   const [selectedProject, setSelectedProject] = useState(null);
   const handleViewProject = (project) => setSelectedProject(project);
   const handleCloseModal = () => setSelectedProject(null);
@@ -32,6 +33,8 @@ export default function CohortsPage() {
     ];
   return (
     <main className="min-h-screen bg-white pb-12">
+      <title>Cohorts | Hokage Academy</title>
+      <meta name="description" content="Explore the first fruits from our talented graduates across programs at Hokage Academy. See student projects and cohort showcases." />
       <section className="pt-36 pb-12 px-4 md:px-8 lg:px-24 max-w-7xl mx-auto">
         <div className="mb-12 text-center">
           <span className="inline-block mb-3 px-3 py-1 rounded-full border text-black font-semibold text-xs tracking-wider">STUDENT SHOWCASE</span>
@@ -42,17 +45,17 @@ export default function CohortsPage() {
         </div>
         {/* Filters */}
         <div className="flex flex-wrap gap-3 justify-center mb-8">
-          <button className="px-4 py-2 rounded-full bg-primary-DEFAULT text-primary-DEFAULT font-bold text-sm shadow">All Projects</button>
-          <button className="px-4 py-2 rounded-full bg-gray-200 text-gray-900 font-semibold text-sm hover:bg-primary-DEFAULT hover:text-white transition">Development</button>
-          <button className="px-4 py-2 rounded-full bg-gray-200 text-gray-900 font-semibold text-sm hover:bg-primary-DEFAULT hover:text-white transition">Design</button>
-          <button className="px-4 py-2 rounded-full bg-gray-200 text-gray-900 font-semibold text-sm hover:bg-primary-DEFAULT hover:text-white transition">A.I</button>
+          <Button size="sm" className="rounded-full shadow" variant="default">All Projects</Button>
+          <Button size="sm" className="rounded-full" variant="outline">Development</Button>
+          <Button size="sm" className="rounded-full" variant="outline">Design</Button>
+          <Button size="sm" className="rounded-full" variant="outline">A.I</Button>
         </div>
         {/* Cohort Projects */}
         <div className="mb-16">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900">Class of <span className="text-primary-DEFAULT italic">2024</span></h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {cohort2024.map((project, idx) => (
-              <div key={idx} className="bg-gray-50 rounded-2xl shadow-lg overflow-hidden flex flex-col border border-gray-200">
+              <Card key={idx} className="bg-gray-50 border border-gray-200 shadow-lg overflow-hidden flex flex-col items-stretch text-left p-0">
                 <div className="relative h-48 w-full">
                   <Image src={project.image ? project.image : '/hcl-logo.png'} alt={project.alt || 'Project screenshot'} fill className="object-cover" />
                 </div>
@@ -68,27 +71,26 @@ export default function CohortsPage() {
                     <span className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-extrabold text-lg shadow">{project.author?.initial || '?'}</span>
                     <span className="text-sm font-bold text-black ml-1">{project.author?.name || ''}</span>
                   </div>
-                  <button
-                    className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-lg font-bold hover:bg-accent transition"
-                    onClick={() => handleViewProject(project)}
-                  >
+                  <Button className="mt-4" onClick={() => handleViewProject(project)}>
                     View Project
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
               {/* Project Modal/Dialog */}
               {selectedProject && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={handleCloseModal}>
                   <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 relative" onClick={e => e.stopPropagation()}>
-                    <button
+                    <Button
                       className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 text-xl font-bold"
                       onClick={handleCloseModal}
                       aria-label="Close"
+                      size="icon"
+                      variant="ghost"
                     >
                       &times;
-                    </button>
+                    </Button>
                     <div className="mb-4">
                       <a href={(selectedProject.image ? selectedProject.image : '/hcl-logo.png')} target="_blank" rel="noopener noreferrer">
                         <Image src={selectedProject.image ? selectedProject.image : '/hcl-logo.png'} alt={selectedProject.alt || selectedProject.title} width={480} height={240} className="rounded-xl object-cover w-full h-48 cursor-zoom-in" />
@@ -121,7 +123,7 @@ export default function CohortsPage() {
               const authorInitial = authorName[0] || '?';
               const imageSrc = project.image ? project.image : '/hcl-logo.png';
               return (
-                <div key={idx} className="bg-gray-50 rounded-xl shadow p-4 flex flex-col items-start border border-gray-200">
+                <Card key={idx} className="bg-gray-50 rounded-xl shadow p-4 flex flex-col items-start border border-gray-200 text-left">
                   <div className="w-16 h-16 bg-gray-200 rounded-lg mb-3 overflow-hidden flex items-center justify-center">
                     <Image src={imageSrc} alt={project.title} width={64} height={64} className="object-contain w-full h-full" />
                   </div>
@@ -131,13 +133,14 @@ export default function CohortsPage() {
                     <span className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-extrabold text-lg shadow">{authorInitial}</span>
                     <span className="text-sm font-bold text-black ml-1">{authorName}</span>
                   </div>
-                  <button
-                    className="text-primary-DEFAULT font-extrabold text-sm underline underline-offset-4 decoration-2 mt-2 hover:text-black transition"
+                  <Button
+                    variant="link"
+                    className="font-extrabold text-sm underline underline-offset-4 decoration-2 mt-2 hover:text-black transition p-0 h-auto"
                     onClick={() => handleViewProject({ ...project, image: imageSrc, author: { name: authorName, initial: authorInitial } })}
                   >
                     View Project
-                  </button>
-                </div>
+                  </Button>
+                </Card>
               );
             })}
           </div>

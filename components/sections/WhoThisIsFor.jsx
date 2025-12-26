@@ -13,7 +13,7 @@ const audiences = [
   {
     icon: <Rocket className="w-7 h-7" />,
     title: "Career Pivots",
-    description: "Ready for a change? Tech welcomes diverse backgrounds—your unique perspective is your advantage.",
+    description: "Ready for a change? Tech welcomes diverse backgrounds, your unique perspective is your advantage.",
     highlight: "Reinvent yourself"
   },
   {
