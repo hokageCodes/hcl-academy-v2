@@ -176,6 +176,6 @@ export default function AdmissionsPage() {
         </div>
       </section>
       <FAQs />
-      </>
+      </main>
   );
 }
