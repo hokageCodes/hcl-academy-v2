@@ -1,0 +1,425 @@
+"use client";
+import { useState, useEffect } from "react";
+
+// Calendly Widget Loader
+function CalendlyWidgetLoader() {
+  useEffect(() => {
+    if (typeof window !== "undefined" && !window.Calendly) {
+      const link = document.createElement("link");
+      link.href = "https://assets.calendly.com/assets/external/widget.css";
+      link.rel = "stylesheet";
+      document.head.appendChild(link);
+
+      const script = document.createElement("script");
+      script.src = "https://assets.calendly.com/assets/external/widget.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+  return null;
+}
+
+// CTA Button with Calendly popup
+function TalkToAdvisorCTA() {
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = () => {
+    setLoading(true);
+    
+    const tryOpen = () => {
+      if (window.Calendly) {
+        window.Calendly.initPopupWidget({ 
+          url: "https://calendly.com/hokagecreativelabs001/30mins" 
+        });
+        setLoading(false);
+      } else {
+        setTimeout(tryOpen, 100);
+      }
+    };
+    
+    tryOpen();
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className="inline-flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800 font-semibold px-8 py-4 rounded-xl transition-all duration-300 min-w-[180px]"
+      type="button"
+      disabled={loading}
+    >
+      {loading ? (
+        <span className="flex items-center gap-2">
+          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+          Loading…
+        </span>
+      ) : (
+        <span>Talk to an Advisor</span>
+      )}
+    </button>
+  );
+}
+
+// Community Voices Component
+function CommunityVoices() {
+  const voices = [
+    {
+      name: "Sarah Johnson",
+      role: "Web Developer",
+      text: "The program completely changed my career trajectory. I went from zero coding knowledge to landing my first developer job in 4 months!",
+      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80"
+    },
+    {
+      name: "Michael Chen",
+      role: "UI/UX Designer",
+      text: "The mentorship and hands-on projects were invaluable. I built a portfolio that got me interviews at top companies.",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80"
+    },
+    {
+      name: "Aisha Bello",
+      role: "Full Stack Developer",
+      text: "Best investment I've made in my career. The instructors are patient, knowledgeable, and truly care about your success.",
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80"
+    }
+  ];
+
+  return (
+    <section className="py-20 px-6 bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-4xl md:text-5xl font-bold text-center mb-4">Community Voices</h2>
+        <p className="text-xl text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+          Hear from our graduates who transformed their careers
+        </p>
+        
+        <div className="grid md:grid-cols-3 gap-8">
+          {voices.map((voice, idx) => (
+            <div key={idx} className="bg-white p-8 rounded-2xl shadow-lg">
+              <div className="flex items-center gap-4 mb-4">
+                <img src={voice.image} alt={voice.name} className="w-16 h-16 rounded-full object-cover" />
+                <div>
+                  <h3 className="font-bold text-lg">{voice.name}</h3>
+                  <p className="text-sm text-gray-600">{voice.role}</p>
+                </div>
+              </div>
+              <p className="text-gray-700 leading-relaxed">{voice.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// FAQs Component
+function FAQs() {
+  const [openIndex, setOpenIndex] = useState(null);
+  
+  const faqs = [
+    {
+      q: "Do I need prior experience?",
+      a: "No prior experience needed! Our programs are designed for complete beginners. We start from the fundamentals and build up your skills progressively."
+    },
+    {
+      q: "How long are the programs?",
+      a: "Programs range from 4 to 8 weeks depending on the track. Each program includes live sessions, hands-on projects, and mentorship."
+    },
+    {
+      q: "What's the time commitment?",
+      a: "Expect to dedicate 10-15 hours per week, including live sessions, practice, and project work. We offer flexible scheduling to fit your lifestyle."
+    },
+    {
+      q: "Will I get a certificate?",
+      a: "Yes! Upon completion, you'll receive a certificate of completion and have a portfolio of projects to showcase to employers."
+    },
+    {
+      q: "What payment options are available?",
+      a: "We offer flexible payment plans including full payment discounts and installment options. Contact an advisor to discuss what works best for you."
+    }
+  ];
+
+  return (
+    <section className="py-20 px-6">
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-4xl md:text-5xl font-bold text-center mb-4">Frequently Asked Questions</h2>
+        <p className="text-xl text-gray-600 text-center mb-12">
+          Everything you need to know about our programs
+        </p>
+        
+        <div className="space-y-4">
+          {faqs.map((faq, idx) => (
+            <div key={idx} className="bg-white rounded-xl shadow-md overflow-hidden">
+              <button
+                onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+                className="w-full px-6 py-5 text-left font-semibold text-lg flex justify-between items-center hover:bg-gray-50 transition-colors"
+              >
+                <span>{faq.q}</span>
+                <svg
+                  className={`w-6 h-6 transition-transform ${openIndex === idx ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openIndex === idx && (
+                <div className="px-6 pb-5 text-gray-700 leading-relaxed">
+                  {faq.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const PROGRAM_TABS = [
+  { key: "all", label: "All Programs" },
+  { key: "development", label: "Development" },
+  { key: "design", label: "Design" },
+  { key: "ai", label: "AI" },
+];
+
+const PROGRAMS = [
+  {
+    id: 1,
+    category: ["development", "all"],
+    featured: true,
+    title: "Intro to Web Development",
+    desc: "Master the foundations of the web. Learn HTML5, CSS3, JavaScript ES6+, and Responsive Design. Build real-world projects and launch your portfolio in just 2 months.",
+    duration: "8 Weeks",
+    tags: ["Beginner Friendly", "Frontend"],
+    skills: [
+      { label: "HTML5", icon: "html" },
+      { label: "CSS3", icon: "css" },
+      { label: "JavaScript", icon: "js" },
+      { label: "Responsive", icon: "responsive" },
+    ],
+    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80",
+    bestSeller: true,
+    price: "N50,000",
+  },
+  {
+    id: 2,
+    category: ["design", "all"],
+    featured: false,
+    title: "UI/UX Design Fundamentals",
+    desc: "Learn the basics of user interface and user experience design. Master Figma, wireframing, prototyping, and design systems.",
+    duration: "6 Weeks",
+    tags: ["Beginner Friendly", "Design"],
+    skills: [
+      { label: "Figma", icon: "figma" },
+      { label: "Wireframing", icon: "wireframe" },
+      { label: "Prototyping", icon: "prototype" },
+      { label: "Design Systems", icon: "system" },
+    ],
+    image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
+    bestSeller: false,
+  },
+  {
+    id: 3,
+    category: ["ai", "all"],
+    featured: false,
+    title: "Vibe Coding Essentials",
+    desc: "Speed up your workflow using what you already know in web development. Learn essential patterns, shortcuts, and tools to code faster and smarter.",
+    duration: "4 Weeks",
+    tags: ["Coding Essentials", "Workflow"],
+    skills: [
+      { label: "Web Dev Knowledge", icon: "web" },
+      { label: "Patterns", icon: "pattern" },
+      { label: "Tools & Shortcuts", icon: "tools" },
+    ],
+    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80",
+    bestSeller: false,
+  },
+];
+
+export default function ProgramsPage() {
+  const [activeTab, setActiveTab] = useState("all");
+  const filteredPrograms = activeTab === "all" 
+    ? PROGRAMS 
+    : PROGRAMS.filter((p) => p.category.includes(activeTab));
+
+  return (
+    <main>
+      <CalendlyWidgetLoader />
+      
+      {/* Hero Section */}
+      <section className="min-h-screen pt-36 pb-20 px-6 flex items-center relative overflow-hidden">
+        <div className="max-w-7xl mx-auto w-full relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight">
+                  Learn. Build. Launch.
+                </h1>
+                <p className="text-xl text-gray-600 leading-relaxed max-w-xl">
+                  Choose from our carefully designed programs that take you from
+                  a complete beginner to "i can fix your printers" in no time
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <TalkToAdvisorCTA />
+                <a
+                  href="/mentorship"
+                  className="inline-flex items-center justify-center gap-2 bg-lime-400 text-black hover:bg-lime-500 font-semibold px-8 py-4 rounded-xl transition-all duration-300"
+                >
+                  <span>Book 1:1 Mentorship</span>
+                </a>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-8 pt-8 border-t border-gray-200">
+                <div>
+                  <div className="text-3xl font-bold text-gray-900 mb-1">12</div>
+                  <div className="text-sm text-gray-600">Weeks</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-gray-900 mb-1">3</div>
+                  <div className="text-sm text-gray-600">Programs</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-gray-900 mb-1">95%</div>
+                  <div className="text-sm text-gray-600">Success Rate</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Image */}
+            <div className="relative">
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                <img
+                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80"
+                  alt="Students collaborating on projects"
+                  className="w-full h-[600px] object-cover"
+                />
+                {/* Overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+              </div>
+
+              {/* Decorative elements */}
+              <div className="absolute -top-6 -right-6 w-32 h-32 bg-green-400/20 rounded-full blur-3xl"></div>
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-purple-400/20 rounded-full blur-3xl"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Tabbed Section */}
+      <section className="max-w-7xl mx-auto w-full mt-12 px-2 md:px-0 mb-24">
+        {/* Tabs */}
+        <div className="flex gap-4 mb-10 flex-wrap">
+          {PROGRAM_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-6 py-3 rounded-full font-semibold text-base transition-all focus:outline-none focus:ring-2 focus:ring-lime-400/60 ${
+                activeTab === tab.key
+                  ? "bg-white text-black shadow-lg"
+                  : "bg-black/80 text-white hover:bg-black"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Programs Grid */}
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+          {filteredPrograms.map((program) => (
+            <div
+              key={program.id}
+              className={`relative flex flex-col h-full rounded-3xl overflow-hidden shadow-2xl transition-transform hover:scale-105 ${
+                program.featured ? "border-2 border-lime-400/80" : ""
+              }`}
+            >
+              {/* Image */}
+              <div className="relative w-full h-64 sm:h-56 md:h-64 lg:h-72 flex-shrink-0">
+                <img
+                  src={program.image}
+                  alt={program.title}
+                  className="w-full h-full object-cover"
+                />
+                {program.bestSeller && (
+                  <span className="absolute left-4 top-4 bg-lime-400 text-black text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                    BEST SELLER
+                  </span>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="p-6 bg-black/90 flex flex-col flex-1 justify-between text-white">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {program.tags.map((tag, i) => (
+                    <span
+                      key={i}
+                      className="bg-white/10 text-white text-xs font-semibold px-3 py-1 rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  <span className="ml-auto flex items-center gap-1 text-lime-400 text-xs font-bold">
+                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="12" fill="currentColor" />
+                    </svg>
+                    {program.duration}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-4 mb-6">
+                  <h2 className="text-2xl font-bold">{program.title}</h2>
+                  <p className="text-gray-300 text-sm md:text-base">{program.desc}</p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {program.skills.map((skill, i) => (
+                      <span
+                        key={i}
+                        className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-lg border border-white/10"
+                      >
+                        {skill.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between">
+                  {(program.title === "UI/UX Design Fundamentals" || program.title === "Vibe Coding Essentials") ? (
+                    <button
+                      disabled
+                      className="text-gray-400 font-semibold underline underline-offset-4 text-base transition-colors cursor-not-allowed opacity-60"
+                      type="button"
+                    >
+                      Apply Now
+                    </button>
+                  ) : (
+                    <a
+                      href="#apply"
+                      className="text-purple-400 hover:text-purple-300 font-semibold underline underline-offset-4 text-base transition-colors"
+                    >
+                      Apply Now
+                    </a>
+                  )}
+                  {program.price && (
+                    <span className="bg-lime-400 text-black text-xs font-bold px-3 py-1 rounded-full shadow">
+                      {program.price}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      
+      <CommunityVoices />
+      <FAQs />
+    </main>
+  );
+}
