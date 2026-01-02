@@ -1,10 +1,13 @@
 export const metadata = {
-  title: "Admin Dashboard | Hokage Academy",
-  description: "Hokage Academy Admin Dashboard",
-  robots: "noindex, nofollow", // Prevent search engines from indexing
+  title: "Admin Dashboard | HCL Academy",
+  description: "HCL Academy Admin Dashboard",
+  robots: "noindex, nofollow",
 };
 
-export default function AdminLayout({ children }) {
-  return children;
+export default function AdminRootLayout({ children }) {
+  return (
+    <div className="min-h-screen bg-[#0f0a19]">
+      {children}
+    </div>
+  );
 }
-

@@ -1,11 +1,4 @@
- 
-
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import "./globals.css";
-import CTASection from "@/components/sections/CTASection";
-import CalendlyWidgetLoader from "@/components/CalendlyWidgetLoader";
-
 
 export const metadata = {
   title: "HCL Academy – Learn Digital Creation | Web, Design, Community",
@@ -36,15 +29,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" dir="ltr" className="scroll-smooth">
       <body className="min-h-screen flex flex-col bg-background text-foreground font-body antialiased">
-        <CalendlyWidgetLoader />
-        {/* Accessible skip link */}
-        <a href="#main-content" className="sr-only focus:not-sr-only absolute top-2 left-2 bg-white text-primary px-4 py-2 rounded z-50 transition-shadow focus:shadow-lg">Skip to main content</a>
-        <Navbar />
-        <main id="main-content" className="flex-1 flex flex-col outline-none" tabIndex={-1}>
-          {children}
-        </main>
-        <CTASection />
-        <Footer />
+        {children}
       </body>
     </html>
   );

@@ -7,7 +7,7 @@ export default function AboutPage() {
     <main>
       {/* SEO Headings for Next.js App Router (if using) */}
       <title>About | Hokage Academy</title>
-      <meta name="description" content="Learn about Hokage Academy: our mission, vision, values, and how we empower Africa’s next generation of digital creators through accessible, practical, and community-driven tech education." />
+      <meta name="description" content="Learn about Hokage Academy: our mission, vision, values, and how we empower Africa's next generation of digital creators through accessible, practical, and community-driven tech education." />
 
       <header>
         <section className="relative min-h-screen flex flex-col items-center justify-center text-center bg-primary px-4 overflow-hidden" aria-label="About Hokage Academy">
@@ -20,7 +20,7 @@ export default function AboutPage() {
             <rect width="100%" height="100%" fill="url(#dots)" />
           </svg>
           <h1 className="relative z-10 text-4xl md:text-5xl font-heading font-bold mb-4 text-primary-foreground">
-            We’ve Been Where You Are.
+            We've Been Where You Are.
           </h1>
           <p className="relative z-10 text-lg md:text-xl max-w-2xl text-primary-foreground/80">
             Every founder and instructor here once stood at the starting line, unsure what to do next.
@@ -33,7 +33,7 @@ export default function AboutPage() {
           Our Origin: Built From Experience
         </h2>
         <p className="text-gray-700 text-lg max-w-2xl">
-          Hokage Academy was born from the real struggles and breakthroughs of people who made the leap into tech themselves. Our curriculum is shaped by the same journey you’re on now, so you’re never alone, and always learning what matters most.
+          Hokage Academy was born from the real struggles and breakthroughs of people who made the leap into tech themselves. Our curriculum is shaped by the same journey you're on now, so you're never alone, and always learning what matters most.
         </p>
       </section>
 
@@ -60,7 +60,7 @@ export default function AboutPage() {
               </span>
               <div>
                 <h3 id="mission-heading" className="font-heading text-xl font-bold mb-2 text-primary">Our Mission</h3>
-                <p className="text-gray-700">Empower Africa’s next generation of digital creators by making world-class tech education accessible, practical, and community-driven.</p>
+                <p className="text-gray-700">Empower Africa's next generation of digital creators by making world-class tech education accessible, practical, and community-driven.</p>
               </div>
             </article>
             {/* Vision */}
@@ -70,7 +70,7 @@ export default function AboutPage() {
               </span>
               <div>
                 <h3 id="vision-heading" className="font-heading text-xl font-bold mb-2 text-primary">Our Vision</h3>
-                <p className="text-gray-700">To be the launchpad for Africa’s most creative, resilient, and globally relevant digital leaders.</p>
+                <p className="text-gray-700">To be the launchpad for Africa's most creative, resilient, and globally relevant digital leaders.</p>
               </div>
             </article>
             {/* Values */}
@@ -112,7 +112,7 @@ export default function AboutPage() {
               <svg width="40" height="40" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#F4B41A" fillOpacity="0.15"/><path d="M12 24c0-2.21 3.58-4 8-4s8 1.79 8 4v2a2 2 0 01-2 2H14a2 2 0 01-2-2v-2zM20 18a4 4 0 100-8 4 4 0 000 8z" stroke="#F4B41A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </span>
             <h3 id="community-heading" className="font-heading text-lg font-bold mb-2 text-primary">Community for Life</h3>
-            <p className="text-gray-700">After graduation, you’re never left behind. You join a thriving community, sharing resources, job leads, expert advice, and ongoing support as you keep growing.</p>
+            <p className="text-gray-700">After graduation, you're never left behind. You join a thriving community, sharing resources, job leads, expert advice, and ongoing support as you keep growing.</p>
           </article>
         </div>
       </section>
@@ -121,3 +121,4 @@ export default function AboutPage() {
     </main>
   );
 }
+
