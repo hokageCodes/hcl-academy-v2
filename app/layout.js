@@ -10,7 +10,7 @@ export const metadata = {
     siteName: "HCL Academy",
     images: [
       {
-        url: "/hcl-og.png",
+        url: "/hcl-logo.png",
         width: 1200,
         height: 630,
         alt: "HCL Academy – Learn Digital Creation",
@@ -18,6 +18,12 @@ export const metadata = {
     ],
     locale: "en_US",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HCL Academy – Learn Digital Creation",
+    description: "Join HCL Academy to learn web development, UI/UX, and digital skills in a vibrant, project-based community.",
+    images: ["/hcl-logo.png"],
   },
   metadataBase: new URL("https://hclacademy.com/"),
   alternates: {
