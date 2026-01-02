@@ -23,7 +23,7 @@ export default function Navbar() {
             <a href="/" className="hover:text-accent-light transition-colors">Home</a>
             <a href="/programs" className="hover:text-accent-light transition-colors">Programs</a>
             <a href="/about" className="hover:text-accent-light transition-colors">About</a>
-            <a href="/admissions" className="hover:text-accent-light transition-colors">Admissions</a>
+            {/* <a href="/admissions" className="hover:text-accent-light transition-colors">Admissions</a> */}
             <a href="/cohorts" className="hover:text-accent-light transition-colors">Cohorts</a>
             <a href="/contact" className="hover:text-accent-light transition-colors">Contact</a>
           </div>

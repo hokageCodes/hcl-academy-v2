@@ -1,102 +1,220 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import Card from "@/components/ui/Card";
 
 export default function ContactPage() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    program: "",
+    message: ""
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Handle form submission
+    console.log(formData);
+  };
+
   return (
-    <main className="min-h-screen bg-[#faf9fb] pb-12">
-      <title>Contact | Hokage Academy</title>
+    <main className="min-h-screen bg-[#0f0a19] relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 right-20 w-[600px] h-[600px] bg-[#7FF41A]/8 rounded-full blur-[180px]"></div>
+        <div className="absolute bottom-40 left-10 w-[500px] h-[500px] bg-purple-600/15 rounded-full blur-[150px]"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#7FF41A]/5 rounded-full blur-[200px]"></div>
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)`,
+        backgroundSize: '50px 50px'
+      }}></div>
+
       <meta name="description" content="Reach out to Hokage Academy with questions about our curriculum, tuition, or partnerships. We're here to help you build the future." />
-      <section className="pt-36 pb-16 px-4 md:px-8 lg:px-24 max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-start">
-          {/* Left: Contact Info */}
-          <div>
-            <span className="inline-block mb-3 px-3 py-1 rounded-full bg-accent-light/10 text-accent font-semibold text-xs tracking-wider">GET IN TOUCH</span>
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-2">
-              Start Your <span className="text-primary-default italic">Creative Journey</span>
-            </h1>
-            <p className="text-lg text-gray-600 mb-8 max-w-md">Reach out with questions about our curriculum, tuition, or partnerships. We are here to help you build the future.</p>
-            <div className="space-y-4 mb-8">
-              <Card className="bg-white rounded-xl shadow p-4 flex flex-row items-center text-left">
-                <span className="bg-accent-light/10 p-2 rounded-full">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 2C7.03 2 3 6.03 3 11c0 5.25 7.5 11 9 11s9-5.75 9-11c0-4.97-4.03-9-9-9zm0 13a2 2 0 110-4 2 2 0 010 4z" stroke="#a259ff" strokeWidth="2"/></svg>
-                </span>
-                <div>
-                  <div className="font-semibold text-gray-900">Academy HQ</div>
-                  <div className="text-sm text-gray-600">123 Innovation Drive, Tech District<br/>Nairobi, Kenya 00100</div>
+      
+      <section className="pt-36 pb-24 px-4 md:px-8 lg:px-24 max-w-7xl mx-auto relative z-10">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
+            Let's Start a <span className="text-[#7FF41A]">Conversation</span>
+          </h1>
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            Have questions about our programs? Ready to begin your journey? We'd love to hear from you.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-5 gap-12 items-start">
+          {/* Left: Contact Info - 2 columns */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Email Card */}
+            <div className="group bg-[#1a1425] border border-white/10 rounded-2xl p-6 hover:border-[#7FF41A]/30 transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#7FF41A]/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
                 </div>
-              </Card>
-              <Card className="bg-white rounded-xl shadow p-4 flex flex-row items-center text-left">
-                <span className="bg-accent-light/10 p-2 rounded-full">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M21 8V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2v-1" stroke="#a259ff" strokeWidth="2"/><path d="M21 8l-9 6-9-6" stroke="#a259ff" strokeWidth="2"/></svg>
-                </span>
                 <div>
-                  <div className="font-semibold text-gray-900">Email Us</div>
-                  <div className="text-sm text-gray-600">For general inquiries and admissions.</div>
-                  <a href="mailto:hello@hclacademy.com" className="text-accent font-medium text-sm">hello@hclacademy.com</a>
+                  <h3 className="font-semibold text-white mb-1">Email Us</h3>
+                  <p className="text-gray-500 text-sm mb-2">For general inquiries and admissions</p>
+                  <a href="mailto:hello@hclacademy.com" className="text-[#7FF41A] font-medium hover:underline">
+                    hokage@hokagecreativelabs.com
+                  </a>
                 </div>
-              </Card>
-              <Card className="bg-white rounded-xl shadow p-4 flex flex-row items-center text-left">
-                <span className="bg-accent-light/10 p-2 rounded-full">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 01-2 2A17.91 17.91 0 013 5a2 2 0 012-2h2.09a1 1 0 011 .75l1.13 4.52a1 1 0 01-.29.95l-1.27 1.27a16 16 0 006.29 6.29l1.27-1.27a1 1 0 01.95-.29l4.52 1.13a1 1 0 01.75 1z" stroke="#a259ff" strokeWidth="2"/></svg>
-                </span>
-                <div>
-                  <div className="font-semibold text-gray-900">Call Us</div>
-                  <div className="text-sm text-gray-600">Mon-Fri from 8am to 5pm.</div>
-                  <a href="tel:+254700123456" className="text-accent font-medium text-sm">+254 (0) 700 123 456</a>
-                </div>
-              </Card>
+              </div>
             </div>
-            <div className="mt-8">
-              <div className="font-semibold mb-2">Follow the Hokage</div>
-              <div className="flex gap-4">
-                <a href="#" aria-label="Twitter" className="hover:text-accent"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53A4.48 4.48 0 0022.4.36a9.09 9.09 0 01-2.88 1.1A4.48 4.48 0 0016.11 0c-2.5 0-4.51 2.01-4.51 4.5 0 .35.04.7.11 1.03C7.69 5.4 4.07 3.67 1.64 1.15c-.38.65-.6 1.4-.6 2.2 0 1.52.77 2.86 1.95 3.65A4.48 4.48 0 01.96 6v.06c0 2.13 1.52 3.91 3.54 4.31-.37.1-.76.16-1.16.16-.28 0-.55-.03-.81-.08.55 1.7 2.16 2.94 4.07 2.97A9.01 9.01 0 010 21.54a12.77 12.77 0 006.92 2.03c8.3 0 12.85-6.88 12.85-12.85 0-.2 0-.39-.01-.58A9.22 9.22 0 0023 3z" fill="#a259ff"/></svg></a>
-                <a href="#" aria-label="LinkedIn" className="hover:text-accent"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" stroke="#a259ff" strokeWidth="2"/><path d="M7 10v7M7 7v.01M12 10v7m0 0v-4a2 2 0 114 0v4" stroke="#a259ff" strokeWidth="2" strokeLinecap="round"/></svg></a>
-                <a href="#" aria-label="Instagram" className="hover:text-accent"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" stroke="#a259ff" strokeWidth="2"/><circle cx="12" cy="12" r="5" stroke="#a259ff" strokeWidth="2"/><circle cx="17" cy="7" r="1.5" fill="#a259ff"/></svg></a>
+
+            {/* Phone Card */}
+            <div className="group bg-[#1a1425] border border-white/10 rounded-2xl p-6 hover:border-[#7FF41A]/30 transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#7FF41A]/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white mb-1">Call Us</h3>
+                  <p className="text-gray-500 text-sm mb-2">Mon-Fri from 8am to 5pm</p>
+                  <a href="tel:+254700123456" className="text-[#7FF41A] font-medium hover:underline">
+                    +2349035104366
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Location Card */}
+            <div className="group bg-[#1a1425] border border-white/10 rounded-2xl p-6 hover:border-[#7FF41A]/30 transition-all duration-300">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#7FF41A]/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white mb-1">Visit Us</h3>
+                  <p className="text-gray-500 text-sm mb-2">Come say hello at our HQ</p>
+                  <p className="text-gray-300 text-sm">
+                    8, Folagoro road, Shomolu, Lagos.<br />
+                    Lagos, Nigeria
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div className="bg-[#1a1425] border border-white/10 rounded-2xl p-6">
+              <h3 className="font-semibold text-white mb-4">Follow Our Journey</h3>
+              <div className="flex gap-3">
+                <a href="#" aria-label="Twitter" className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#7FF41A]/20 hover:border-[#7FF41A]/30 transition-all">
+                  <svg className="w-5 h-5 text-gray-400 hover:text-[#7FF41A]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </a>
+                <a href="#" aria-label="LinkedIn" className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#7FF41A]/20 hover:border-[#7FF41A]/30 transition-all">
+                  <svg className="w-5 h-5 text-gray-400 hover:text-[#7FF41A]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </a>
+                <a href="#" aria-label="Instagram" className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#7FF41A]/20 hover:border-[#7FF41A]/30 transition-all">
+                  <svg className="w-5 h-5 text-gray-400 hover:text-[#7FF41A]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                  </svg>
+                </a>
+                <a href="#" aria-label="YouTube" className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#7FF41A]/20 hover:border-[#7FF41A]/30 transition-all">
+                  <svg className="w-5 h-5 text-gray-400 hover:text-[#7FF41A]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                </a>
               </div>
             </div>
           </div>
-          {/* Right: Contact Form */}
-          <div>
-            <Card className="bg-white rounded-2xl shadow-xl p-8 md:p-10 text-left">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900">Send us a message</h2>
-              <p className="text-gray-600 mb-6 text-sm">Fill out the form below and we'll get back to you within 24 hours.</p>
-              <form className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {/* Right: Contact Form - 3 columns */}
+          <div className="lg:col-span-3">
+            <div className="bg-[#1a1425] border border-white/10 rounded-3xl p-8 md:p-10 relative overflow-hidden">
+              {/* Decorative corner accent */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#7FF41A]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+              
+              <h2 className="text-2xl font-bold text-white mb-2">Send us a message</h2>
+              <p className="text-gray-500 mb-8">Fill out the form below and we'll get back to you within 24 hours.</p>
+              
+              <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input type="text" id="name" name="name" placeholder="Jane Doe" className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent-light" />
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Jane Doe"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#7FF41A]/50 focus:ring-1 focus:ring-[#7FF41A]/50 transition-all"
+                    />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                    <input type="email" id="email" name="email" placeholder="jane@example.com" className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent-light" />
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="jane@example.com"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#7FF41A]/50 focus:ring-1 focus:ring-[#7FF41A]/50 transition-all"
+                    />
                   </div>
                 </div>
+
                 <div>
-                  <label htmlFor="program" className="block text-sm font-medium text-gray-700 mb-1">Program of Interest</label>
-                  <select id="program" name="program" className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent-light">
-                    <option value="">Select a program...</option>
-                    <option value="design">Design</option>
-                    <option value="development">Development</option>
-                    <option value="animation">Animation</option>
+                  <label htmlFor="program" className="block text-sm font-medium text-gray-300 mb-2">Program of Interest</label>
+                  <select
+                    id="program"
+                    name="program"
+                    value={formData.program}
+                    onChange={handleChange}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-[#7FF41A]/50 focus:ring-1 focus:ring-[#7FF41A]/50 transition-all appearance-none cursor-pointer"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}
+                  >
+                    <option value="" className="bg-[#1a1425]">Select a program...</option>
+                    <option value="web-development" className="bg-[#1a1425]">Web Development</option>
+                    <option value="ui-ux-design" className="bg-[#1a1425]">UI/UX Design</option>
+                    <option value="ai-ml" className="bg-[#1a1425]">AI & Machine Learning</option>
+                    <option value="data-science" className="bg-[#1a1425]">Data Science</option>
                   </select>
                 </div>
+
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                  <textarea id="message" name="message" rows={4} placeholder="Tell us a little about yourself and what you're looking for..." className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent-light"></textarea>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-2">Your Message</label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    rows={5}
+                    value={formData.message}
+                    onChange={handleChange}
+                    placeholder="Tell us about yourself and what you're looking for..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#7FF41A]/50 focus:ring-1 focus:ring-[#7FF41A]/50 transition-all resize-none"
+                  ></textarea>
                 </div>
-                <Button type="submit" className="w-full py-4 mt-2 flex items-center justify-center gap-2 text-base font-semibold rounded-lg shadow-lg">
-                  Send Message <span aria-hidden="true">→</span>
+
+                <Button
+                  type="submit"
+                  className="w-full py-4 bg-[#7FF41A] hover:bg-[#6ad815] text-[#0f0a19] font-bold text-base rounded-xl shadow-lg shadow-[#7FF41A]/20 transition-all hover:shadow-xl hover:shadow-[#7FF41A]/30 flex items-center justify-center gap-2"
+                >
+                  Send Message
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
                 </Button>
               </form>
-            </Card>
+            </div>
           </div>
-        </div>
-      </section>
-      {/* Map Section */}
-      <section className="max-w-5xl mx-auto px-4 md:px-8 mt-16">
-        <div className="rounded-3xl overflow-hidden shadow-2xl relative">
-            <Image src="/hcl-logo.png" alt="Map to HCL Academy, Lagos, Nigeria" width={1200} height={400} className="w-full h-80 object-cover" />
         </div>
       </section>
     </main>

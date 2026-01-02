@@ -1,7 +1,6 @@
 import FAQs from "@/components/sections/FAQs";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import Card from "@/components/ui/Card";
 
 export default function AdmissionsPage() {
   return (
@@ -69,55 +68,88 @@ export default function AdmissionsPage() {
         </div>
       </section>
 {/* Learning Experience Section */}
-      <section className="relative py-24 px-4 md:px-8 lg:px-24 bg-white border-t border-gray-200" aria-labelledby="how-learn-heading">
-        <div className="max-w-6xl mx-auto">
+      <section className="relative py-24 px-4 md:px-8 lg:px-24 bg-[#21083F] overflow-hidden" aria-labelledby="how-learn-heading">
+        {/* Background decorative elements */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-[#7FF41A]/10 rounded-full blur-[100px]"></div>
+          <div className="absolute bottom-10 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#7FF41A]/5 rounded-full blur-[150px]"></div>
+        </div>
+        
+        <div className="max-w-6xl mx-auto relative z-10">
           <div className="max-w-2xl mb-16">
-            <h2 id="how-learn-heading" className="font-heading text-4xl md:text-5xl font-bold text-[#21083F] mb-4">
-              How You’ll Learn
+            <span className="inline-block mb-4 px-4 py-1.5 rounded-full bg-[#7FF41A]/20 border border-[#7FF41A]/30 text-[#7FF41A] text-sm font-medium tracking-wide uppercase">
+              Learning Experience
+            </span>
+            <h2 id="how-learn-heading" className="font-heading text-4xl md:text-5xl font-bold text-white mb-6">
+              How You'll Learn
             </h2>
-            <p className="text-gray-600 text-lg leading-relaxed">
+            <p className="text-gray-300 text-lg leading-relaxed">
               Our learning model is designed for real life — structured, flexible, and deeply practical.
-              You won’t just watch lessons. You’ll build, practice, and grow with guidance every step
+              You won't just watch lessons. You'll build, practice, and grow with guidance every step
               of the way.
             </p>
           </div>
-          <div className="grid gap-8 md:grid-cols-3">
-            <Card>
-              <span className="inline-block mb-6 rounded-full bg-[#7FF41A]/20 px-4 py-1 text-sm font-medium text-[#21083F]">
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Weekend Track Card */}
+            <div className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 transition-all duration-300 hover:bg-white/10 hover:border-[#7FF41A]/30 hover:-translate-y-2">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#7FF41A] to-[#7FF41A]/50 rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="w-14 h-14 mb-6 rounded-xl bg-[#7FF41A]/20 flex items-center justify-center">
+                <svg className="w-7 h-7 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <span className="inline-block mb-4 text-[#7FF41A] text-sm font-semibold tracking-wide uppercase">
                 Weekend Track
               </span>
-              <h3 className="text-xl font-semibold text-[#21083F] mb-3">
+              <h3 className="text-xl font-semibold text-white mb-3">
                 Learn without disrupting your week
               </h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-400 leading-relaxed">
                 Intensive Saturday and Sunday sessions designed for professionals, students,
                 and career switchers who need structure without weekday pressure.
               </p>
-            </Card>
-            <Card>
-              <span className="inline-block mb-6 rounded-full bg-[#7FF41A]/20 px-4 py-1 text-sm font-medium text-[#21083F]">
+            </div>
+
+            {/* Daily Track Card */}
+            <div className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 transition-all duration-300 hover:bg-white/10 hover:border-[#7FF41A]/30 hover:-translate-y-2">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#7FF41A] to-[#7FF41A]/50 rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="w-14 h-14 mb-6 rounded-xl bg-[#7FF41A]/20 flex items-center justify-center">
+                <svg className="w-7 h-7 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span className="inline-block mb-4 text-[#7FF41A] text-sm font-semibold tracking-wide uppercase">
                 Daily Track
               </span>
-              <h3 className="text-xl font-semibold text-[#21083F] mb-3">
+              <h3 className="text-xl font-semibold text-white mb-3">
                 Build momentum, one day at a time
               </h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-400 leading-relaxed">
                 Short, focused daily sessions that keep you consistent and engaged.
                 Ideal if you want faster progress and a steady learning rhythm.
               </p>
-            </Card>
-            <Card>
-              <span className="inline-block mb-6 rounded-full bg-[#7FF41A]/20 px-4 py-1 text-sm font-medium text-[#21083F]">
+            </div>
+
+            {/* Fully Online Card */}
+            <div className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 transition-all duration-300 hover:bg-white/10 hover:border-[#7FF41A]/30 hover:-translate-y-2">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#7FF41A] to-[#7FF41A]/50 rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="w-14 h-14 mb-6 rounded-xl bg-[#7FF41A]/20 flex items-center justify-center">
+                <svg className="w-7 h-7 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+              </div>
+              <span className="inline-block mb-4 text-[#7FF41A] text-sm font-semibold tracking-wide uppercase">
                 Fully Online
               </span>
-              <h3 className="text-xl font-semibold text-[#21083F] mb-3">
+              <h3 className="text-xl font-semibold text-white mb-3">
                 Learn from anywhere
               </h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-gray-400 leading-relaxed">
                 All programs run online with live sessions, real-time feedback,
-                recordings, and collaborative projects, no matter where you’re based.
+                recordings, and collaborative projects, no matter where you're based.
               </p>
-            </Card>
+            </div>
           </div>
         </div>
       </section>
