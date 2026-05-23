@@ -1,193 +1,287 @@
 "use client";
+
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { COHORT_2024 } from "@/lib/cohortProjects";
+import CohortsHero from "@/components/cohorts/CohortsHero";
+import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 
-const filters = ["All Projects", "Development", "Design", "A.I"];
+const FILTERS = ["All Projects", "Development", "Design", "AI"];
+
+function CohortFilters({ activeFilter, onChange }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Project categories"
+      className="inline-flex w-full flex-wrap justify-center gap-1 rounded-2xl border border-neutral-gray/80 bg-white p-1.5 shadow-card sm:w-auto"
+    >
+      {FILTERS.map((filter) => {
+        const isActive = activeFilter === filter;
+        return (
+          <button
+            key={filter}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(filter)}
+            className={cn(
+              "whitespace-nowrap rounded-xl px-4 py-2.5 font-heading text-sm font-semibold transition-all",
+              isActive
+                ? "bg-primary text-white shadow-sm"
+                : "text-neutral-text/70 hover:bg-neutral-gray hover:text-neutral-text"
+            )}
+          >
+            {filter}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProjectCard({ project, onView }) {
+  return (
+    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-gray bg-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-accent-light/50 hover:shadow-glass">
+      <div className="relative h-52 w-full overflow-hidden bg-neutral-gray">
+        <Image
+          src={project.image}
+          alt={project.alt || project.title}
+          fill
+          className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, 33vw"
+        />
+      </div>
+      <div className="flex flex-1 flex-col p-6">
+        <div className="mb-3 flex flex-wrap gap-2">
+          {project.tags?.map((tag) => (
+            <span
+              key={tag.label}
+              className={cn(
+                "rounded-full px-3 py-1 font-heading text-xs font-bold",
+                tag.color || "bg-neutral-gray text-neutral-text"
+              )}
+            >
+              {tag.label}
+            </span>
+          ))}
+        </div>
+        <h3 className="font-heading text-xl font-bold text-neutral-text transition-colors group-hover:text-primary">
+          {project.title}
+        </h3>
+        <p className="mt-2 flex-1 font-body text-sm leading-relaxed text-neutral-text/75">
+          {project.desc}
+        </p>
+        <div className="mt-4 flex items-center gap-3 border-t border-neutral-gray pt-4">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary font-heading text-sm font-bold text-white">
+            {project.author?.initial || "?"}
+          </span>
+          <div className="min-w-0">
+            <p className="font-heading text-sm font-semibold text-neutral-text">
+              {project.author?.name}
+            </p>
+            <p className="font-body text-xs text-neutral-text/60">
+              {project.program}
+              {project.cohortYear ? ` · Class of ${project.cohortYear}` : ""}
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          onClick={() => onView(project)}
+          className="mt-5 h-11 w-full rounded-xl bg-primary font-heading font-semibold text-white hover:bg-accent-light hover:text-primary"
+        >
+          View Project
+        </Button>
+      </div>
+    </article>
+  );
+}
+
+function ProjectModal({ project, onClose }) {
+  useLockBodyScroll(Boolean(project));
+
+  if (!project) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-none bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="project-modal-title"
+    >
+      <div
+        className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-neutral-gray bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-neutral-gray px-6 py-4">
+          <div className="min-w-0 pr-2">
+            <p className="font-heading text-xs font-semibold uppercase tracking-wide text-primary">
+              Student project
+            </p>
+            <h2
+              id="project-modal-title"
+              className="mt-1 font-heading text-lg font-bold leading-snug text-neutral-text md:text-xl"
+            >
+              {project.title}
+            </h2>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="shrink-0 rounded-xl text-neutral-text/60 hover:bg-neutral-gray hover:text-neutral-text"
+            aria-label="Close"
+          >
+            <X className="size-5" />
+          </Button>
+        </div>
+
+        <div className="overflow-y-auto px-6 py-5">
+          <div className="mb-5">
+            <a
+              href={project.image}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative block max-h-[min(58vh,520px)] min-h-[220px] w-full overflow-hidden rounded-xl bg-neutral-gray"
+            >
+              <Image
+                src={project.image}
+                alt={project.alt || project.title}
+                width={900}
+                height={1600}
+                className="mx-auto size-full cursor-zoom-in object-contain object-top"
+              />
+            </a>
+            <p className="mt-3 flex items-center justify-center gap-1.5 font-body text-xs text-neutral-text/55">
+              <ArrowUp className="size-3.5 shrink-0" aria-hidden />
+              Click image to view full size
+            </p>
+          </div>
+
+          <div className="mb-4 flex flex-wrap gap-2">
+            {project.tags?.map((tag) => (
+              <span
+                key={tag.label}
+                className={cn(
+                  "rounded-full px-3 py-1 font-heading text-xs font-bold",
+                  tag.color || "bg-neutral-gray text-neutral-text"
+                )}
+              >
+                {tag.label}
+              </span>
+            ))}
+          </div>
+
+          <p className="font-body leading-relaxed text-neutral-text/80">
+            {project.desc}
+          </p>
+
+          <div className="mt-6 flex items-center gap-3 border-t border-neutral-gray pt-5">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-light font-heading text-sm font-bold text-primary">
+              {project.author?.initial}
+            </span>
+            <div>
+              <p className="font-heading text-sm font-semibold text-neutral-text">
+                {project.author?.name}
+              </p>
+              <p className="font-body text-xs text-neutral-text/60">
+                {project.program}
+                {project.cohortYear ? ` · Class of ${project.cohortYear}` : ""}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyCohort({ message }) {
+  return (
+    <div className="rounded-2xl border border-dashed border-neutral-gray bg-neutral-gray px-8 py-14 text-center">
+      <p className="font-body text-neutral-text/60">{message}</p>
+    </div>
+  );
+}
 
 export default function CohortsPage() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [activeFilter, setActiveFilter] = useState("All Projects");
-  const handleViewProject = (project) => setSelectedProject(project);
-  const handleCloseModal = () => setSelectedProject(null);
 
-  // Data for mapping
-  const cohort2024 = [
-    {
-      image: "/projects/temidayo.png",
-      alt: "Fintech Dashboard Redesign",
-      tags: [
-        { label: "Frontend", color: "bg-green-600 text-white" },
-        { label: "Featured", color: "bg-gray-900 text-white" }
-      ],
-      title: "E-commerce landing Page Redesign",
-      desc: "A modern e-commerce landing page, built by Temidayo (Web Development Specialization).",
-      author: { name: "Temidayo", initial: "T" },
-      category: "Development"
-    }
-    // Add more projects here
-  ];
-
-  const cohort2023 = [
-    // {
-    //   title: "Neo Lagos Art Series",
-    //   desc: "Digital Illustration",
-    //   author: "Zainab A.",
-    //   category: "Design"
-    // },
-  ];
-
-  // Filter projects based on active filter
   const filterProjects = (projects) => {
     if (activeFilter === "All Projects") return projects;
-    return projects.filter(project => project.category === activeFilter);
+    return projects.filter((p) => p.category === activeFilter);
   };
 
-  const filtered2024 = filterProjects(cohort2024);
-  const filtered2023 = filterProjects(cohort2023);
+  const filtered2024 = filterProjects(COHORT_2024);
+
   return (
-    <main className="min-h-screen bg-[#0f0a19] pb-12 relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-40 left-20 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[150px]"></div>
-        <div className="absolute bottom-40 right-10 w-[400px] h-[400px] bg-[#7FF41A]/10 rounded-full blur-[120px]"></div>
-      </div>
-      <meta name="description" content="Explore the first fruits from our talented graduates across programs at Hokage Academy. See student projects and cohort showcases." />
-      <section className="pt-36 pb-12 px-4 md:px-8 lg:px-24 max-w-7xl mx-auto relative z-10">
-        <div className="mb-12 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight mb-4">
-            The Makers of <span className="text-[#7FF41A]">Tomorrow</span>
-          </h1>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto">Explore the first fruits from our talented graduates across programs.</p>
-        </div>
-        {/* Filters */}
-        <div className="flex flex-wrap gap-3 justify-center mb-10">
-          {filters.map((filter) => (
-            <Button
-              key={filter}
-              size="sm"
-              onClick={() => setActiveFilter(filter)}
-              className={`rounded-full font-bold transition-all duration-200 ${
-                activeFilter === filter
-                  ? "bg-[#7FF41A] text-[#0f0a19] hover:bg-[#6ad815] shadow-lg shadow-[#7FF41A]/20"
-                  : "bg-white/10 text-white border-white/20 hover:bg-white/20"
-              }`}
-              variant={activeFilter === filter ? "default" : "outline"}
-            >
-              {filter}
-            </Button>
-          ))}
-        </div>
-        {/* Cohort Projects */}
-        <div className="mb-16">
-          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-white">Class of <span className="text-[#7FF41A] italic">2024</span></h2>
+    <main className="bg-white">
+      <CohortsHero />
+
+      {/* Class of 2024 */}
+      <section className="px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10 flex flex-col gap-6 md:mb-12 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl">
+              <h2 className="font-heading text-3xl font-bold text-neutral-text md:text-4xl">
+                Class of <span className="text-primary">2024</span>
+              </h2>
+              <p className="mt-3 font-body text-neutral-text/75">
+                Real projects built during the program — filter by track to
+                browse.
+              </p>
+            </div>
+            <CohortFilters
+              activeFilter={activeFilter}
+              onChange={setActiveFilter}
+            />
+          </div>
           {filtered2024.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p>No projects found in this category for Class of 2024.</p>
-            </div>
+            <EmptyCohort message="No projects in this category for the Class of 2024 yet." />
           ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filtered2024.map((project, idx) => (
-              <div key={idx} className="group bg-[#1a1425] border border-white/10 rounded-2xl overflow-hidden shadow-xl hover:border-[#7FF41A]/40 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-[#7FF41A]/10">
-                <div className="relative h-52 w-full overflow-hidden">
-                  <Image src={project.image ? project.image : '/hcl-logo.png'} alt={project.alt || 'Project screenshot'} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1425] via-transparent to-transparent"></div>
-                </div>
-                <div className="p-6 flex-1 flex flex-col">
-                  <div className="flex gap-2 mb-3">
-                    {project.tags && project.tags.map((tag, i) => (
-                      <span key={i} className={`text-xs font-bold px-3 py-1 rounded-full ${i === 0 ? 'bg-[#7FF41A] text-[#0f0a19]' : 'bg-white/10 text-white'}`}>{tag.label}</span>
-                    ))}
-                  </div>
-                  <h3 className="font-bold text-xl mb-2 text-white group-hover:text-[#7FF41A] transition-colors">{project.title}</h3>
-                  <p className="text-gray-400 text-sm mb-4 flex-1 leading-relaxed">{project.desc}</p>
-                  <div className="flex items-center gap-3 mt-auto pt-4 border-t border-white/10">
-                    <span className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7FF41A] to-[#5eb812] text-[#0f0a19] flex items-center justify-center font-extrabold text-lg shadow-lg">{project.author?.initial || '?'}</span>
-                    <span className="text-sm font-semibold text-white">{project.author?.name || ''}</span>
-                  </div>
-                  <Button className="mt-5 w-full bg-white/10 hover:bg-[#7FF41A] hover:text-[#0f0a19] text-white border-0 font-semibold transition-all" onClick={() => handleViewProject(project)}>
-                    View Project
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-          )}
-              {/* Project Modal/Dialog */}
-              {selectedProject && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={handleCloseModal}>
-                  <div className="bg-[#1a1425] border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full p-8 relative" onClick={e => e.stopPropagation()}>
-                    <Button
-                      className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold bg-white/10 hover:bg-white/20"
-                      onClick={handleCloseModal}
-                      aria-label="Close"
-                      size="icon"
-                      variant="ghost"
-                    >
-                      &times;
-                    </Button>
-                    <div className="mb-5">
-                      <a href={(selectedProject.image ? selectedProject.image : '/hcl-logo.png')} target="_blank" rel="noopener noreferrer">
-                        <Image src={selectedProject.image ? selectedProject.image : '/hcl-logo.png'} alt={selectedProject.alt || selectedProject.title} width={480} height={240} className="rounded-xl object-cover w-full h-52 cursor-zoom-in" />
-                      </a>
-                      <div className="text-xs text-[#0f0a19] mt-3 text-center rounded-full px-4 py-1.5 bg-[#7FF41A] font-semibold inline-block">Click image to view full size</div>
-                    </div>
-                    <h2 className="font-bold text-2xl mb-3 text-white">{selectedProject.title}</h2>
-                    {Array.isArray(selectedProject.tags) && selectedProject.tags.length > 0 ? (
-                      <div className="flex gap-2 mb-3">
-                        {selectedProject.tags.map((tag, i) => (
-                          <span key={i} className={`text-xs font-bold px-3 py-1 rounded-full ${i === 0 ? 'bg-[#7FF41A] text-[#0f0a19]' : 'bg-white/10 text-white'}`}>{tag.label}</span>
-                        ))}
-                      </div>
-                    ) : null}
-                    <p className="text-gray-400 mb-5 leading-relaxed">{selectedProject.desc}</p>
-                    <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-                      <span className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7FF41A] to-[#5eb812] text-[#0f0a19] flex items-center justify-center font-extrabold text-lg shadow-lg">{selectedProject.author?.initial || '?'}</span>
-                      <span className="text-sm font-semibold text-white">{selectedProject.author?.name || ''}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-        </div>
-        {/* Previous Cohorts */}
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-white">Class of <span className="text-[#7FF41A] italic">2023</span></h2>
-          {filtered2023.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p>No projects found in this category for Class of 2023.</p>
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered2024.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onView={setSelectedProject}
+                />
+              ))}
             </div>
-          ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {filtered2023.map((project, idx) => {
-              const authorName = project.author || '';
-              const authorInitial = authorName[0] || '?';
-              const imageSrc = project.image ? project.image : '/hcl-logo.png';
-              return (
-                <div key={idx} className="group bg-[#1a1425] rounded-xl p-5 flex flex-col items-start border border-white/10 text-left hover:border-[#7FF41A]/40 transition-all duration-300 hover:-translate-y-1">
-                  <div className="w-16 h-16 bg-white/10 rounded-xl mb-4 overflow-hidden flex items-center justify-center">
-                    <Image src={imageSrc} alt={project.title} width={64} height={64} className="object-contain w-full h-full" />
-                  </div>
-                  <div className="font-bold text-sm mb-1 text-white group-hover:text-[#7FF41A] transition-colors">{project.title}</div>
-                  <div className="text-xs text-gray-500 mb-3">{project.desc}</div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="w-7 h-7 rounded-full bg-gradient-to-br from-[#7FF41A] to-[#5eb812] text-[#0f0a19] flex items-center justify-center font-bold text-sm">{authorInitial}</span>
-                    <span className="text-xs font-semibold text-gray-300">{authorName}</span>
-                  </div>
-                  <Button
-                    variant="link"
-                    className="font-semibold text-sm text-[#7FF41A] hover:text-[#9fff5a] transition p-0 h-auto mt-auto"
-                    onClick={() => handleViewProject({ ...project, image: imageSrc, author: { name: authorName, initial: authorInitial } })}
-                  >
-                    View Project →
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
           )}
         </div>
       </section>
+
+      {/* CTA */}
+      <section className="border-t border-neutral-gray bg-white px-6 py-16">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="font-heading text-2xl font-bold text-neutral-text md:text-3xl">
+            Ready to build something worth showcasing?
+          </h2>
+          <p className="mt-3 font-body text-neutral-text/75">
+            Join the next cohort and add your project to this wall.
+          </p>
+          <Button
+            asChild
+            size="lg"
+            className="mt-8 h-12 rounded-xl bg-primary px-10 font-heading font-semibold text-white hover:bg-accent-light hover:text-primary"
+          >
+            <Link href="/programs">View Programs</Link>
+          </Button>
+        </div>
+      </section>
+
+      <ProjectModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+      />
     </main>
   );
 }
-

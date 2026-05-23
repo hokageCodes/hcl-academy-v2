@@ -2,43 +2,6 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 
-// Programs data - in a real app, this would come from an API/database
-const PROGRAMS_DATA = [
-  {
-    id: "intro-to-web-development",
-    title: "Intro to Web Development",
-    description: "Master the foundations of the web. Learn HTML5, CSS3, JavaScript ES6+, and Responsive Design.",
-    duration: "8 Weeks",
-    price: 50000,
-    available: true,
-    category: "development",
-    skills: ["HTML5", "CSS3", "JavaScript", "Responsive Design"],
-    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80",
-  },
-  {
-    id: "ui-ux-design-fundamentals",
-    title: "UI/UX Design Fundamentals",
-    description: "Learn the basics of user interface and user experience design. Master Figma, wireframing, prototyping.",
-    duration: "6 Weeks",
-    price: 45000,
-    available: false,
-    category: "design",
-    skills: ["Figma", "Wireframing", "Prototyping", "Design Systems"],
-    image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
-  },
-  {
-    id: "vibe-coding-essentials",
-    title: "Vibe Coding Essentials",
-    description: "Speed up your workflow using what you already know in web development. Learn essential patterns and tools.",
-    duration: "4 Weeks",
-    price: 35000,
-    available: false,
-    category: "ai",
-    skills: ["Web Dev Knowledge", "Patterns", "Tools & Shortcuts"],
-    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80",
-  },
-];
-
 function ProgramCard({ program, stats, onEdit }) {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-NG", {
@@ -109,12 +72,12 @@ function ProgramCard({ program, stats, onEdit }) {
 
         {/* Skills */}
         <div className="flex flex-wrap gap-1 mb-4">
-          {program.skills.map((skill, idx) => (
+          {(program.skills || []).map((skill, idx) => (
             <span
               key={idx}
               className="px-2 py-0.5 bg-white/5 text-gray-400 text-xs rounded"
             >
-              {skill}
+              {typeof skill === "string" ? skill : skill.label}
             </span>
           ))}
         </div>
@@ -152,17 +115,48 @@ function EditProgramModal({ program, onClose, onSave }) {
     description: program?.description || "",
     duration: program?.duration || "",
     price: program?.price || 0,
+    originalPrice: program?.originalPrice ?? "",
     available: program?.available || false,
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-    // Simulate save
-    await new Promise((r) => setTimeout(r, 1000));
-    onSave({ ...program, ...formData });
-    setIsSaving(false);
+    setSaveError("");
+
+    try {
+      const response = await fetch(`/api/admin/programs/${program.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          duration: formData.duration,
+          price: Number(formData.price),
+          originalPrice:
+            formData.originalPrice === "" || formData.originalPrice === null
+              ? null
+              : Number(formData.originalPrice),
+          available: formData.available,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setSaveError(data.error || "Failed to save program");
+        return;
+      }
+
+      onSave(data.data.program);
+    } catch {
+      setSaveError("Failed to save program");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!program) return null;
@@ -227,6 +221,21 @@ function EditProgramModal({ program, onClose, onSave }) {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Original price (₦, optional)
+            </label>
+            <input
+              type="number"
+              value={formData.originalPrice}
+              onChange={(e) =>
+                setFormData({ ...formData, originalPrice: e.target.value })
+              }
+              placeholder="Leave empty if no discount"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#7FF41A]/50"
+            />
+          </div>
+
           <div className="flex items-center gap-3">
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -240,16 +249,9 @@ function EditProgramModal({ program, onClose, onSave }) {
             <span className="text-white text-sm">Program Available</span>
           </div>
 
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <p className="text-yellow-200 text-sm">
-                Note: Program changes are simulated. In production, this would update the database and require a page refresh on the public site.
-              </p>
-            </div>
-          </div>
+          {saveError && (
+            <p className="text-red-400 text-sm text-center">{saveError}</p>
+          )}
 
           <div className="flex gap-3">
             <button
@@ -284,15 +286,40 @@ function EditProgramModal({ program, onClose, onSave }) {
 }
 
 function ProgramsContent() {
-  const [programs, setPrograms] = useState(PROGRAMS_DATA);
+  const [programs, setPrograms] = useState([]);
   const [programStats, setProgramStats] = useState({});
   const [editingProgram, setEditingProgram] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    async function fetchPrograms() {
+      setIsLoading(true);
+      setLoadError("");
+      try {
+        const response = await fetch("/api/admin/programs", {
+          credentials: "same-origin",
+        });
+        const data = await response.json();
+        if (data.success) {
+          setPrograms(data.data.programs);
+        } else {
+          setLoadError(data.error || "Failed to load programs");
+        }
+      } catch {
+        setLoadError("Failed to load programs");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchPrograms();
+  }, []);
 
   // Fetch stats for each program
   useEffect(() => {
+    if (programs.length === 0) return;
+
     async function fetchStats() {
-      setIsLoading(true);
       try {
         const statsPromises = programs.map(async (program) => {
           const response = await fetch(`/api/admin/payments?programId=${program.id}&status=completed&limit=1000`);
@@ -317,8 +344,6 @@ function ProgramsContent() {
         setProgramStats(statsMap);
       } catch (error) {
         console.error("Failed to fetch program stats:", error);
-      } finally {
-        setIsLoading(false);
       }
     }
 
@@ -395,6 +420,10 @@ function ProgramsContent() {
           <p className="text-2xl font-bold text-purple-400">{isLoading ? "..." : formatCurrency(totalRevenue)}</p>
         </div>
       </div>
+
+      {loadError && (
+        <p className="mb-6 text-center text-red-400 text-sm">{loadError}</p>
+      )}
 
       {/* Programs Grid */}
       {isLoading ? (

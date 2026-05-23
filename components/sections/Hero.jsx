@@ -19,7 +19,7 @@ export default function Hero() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-7xl mx-auto">
         <h1 className="font-heading text-5xl md:text-7xl font-extrabold text-white mb-8 leading-tight drop-shadow-xl">
-          Build the Future.<br className="hidden md:block" /> Learn Digital Creation.
+          Build the Future.<br className="hidden md:block" /> Learn in-demand digital skills.
         </h1>
         <p className="font-body text-xl md:text-2xl text-neutral-gray mb-10 max-w-xl mx-auto font-medium">
           Learn new skills from scratch and build real projects. No prior experience required.
@@ -32,7 +32,7 @@ export default function Hero() {
           </a>
           <a href="/programs">
             <button className="bg-white text-primary font-heading font-semibold px-8 py-4 rounded-xl text-lg hover:bg-primary hover:text-white transition-colors border border-primary/20">
-              Explore Programs
+              Our Programs
             </button>
           </a>
         </div>

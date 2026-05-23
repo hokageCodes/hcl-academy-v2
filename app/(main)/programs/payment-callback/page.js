@@ -1,25 +1,45 @@
 "use client";
+
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Check, Copy, X, AlertCircle, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 
-// Loading component for Suspense fallback
-function LoadingState() {
+function formatNaira(amount) {
+  if (amount == null || Number.isNaN(Number(amount))) return "—";
+  return `₦${Number(amount).toLocaleString("en-NG")}`;
+}
+
+function OverlayCard({ children, className }) {
   return (
-    <div className="bg-[#1a1425] border border-white/10 rounded-3xl p-10 text-center">
-      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#7FF41A]/20 flex items-center justify-center">
-        <svg className="animate-spin h-10 w-10 text-[#7FF41A]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-      </div>
-      <h1 className="text-2xl font-bold text-white mb-2">Loading...</h1>
-      <p className="text-gray-400">Please wait...</p>
+    <div
+      className={cn(
+        "w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-[#1a1425] shadow-2xl",
+        className
+      )}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
     </div>
   );
 }
 
-// Main payment callback content (uses useSearchParams)
+function LoadingState() {
+  return (
+    <OverlayCard className="p-10 text-center">
+      <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-accent-light/20">
+        <Loader2 className="size-10 animate-spin text-accent-light" />
+      </div>
+      <h1 className="font-heading text-2xl font-bold text-white">Verifying payment</h1>
+      <p className="mt-2 font-body text-gray-400">
+        Please wait while we confirm your transaction…
+      </p>
+    </OverlayCard>
+  );
+}
+
 function PaymentCallbackContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("verifying");
@@ -42,8 +62,15 @@ function PaymentCallbackContent() {
   }, [searchParams]);
 
   const verifyPayment = async (reference) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
     try {
-      const response = await fetch(`/api/paystack/verify?reference=${encodeURIComponent(reference)}`);
+      const response = await fetch(
+        `/api/paystack/verify?reference=${encodeURIComponent(reference)}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
       const data = await response.json();
 
       if (data.success && data.data.status === "success") {
@@ -57,10 +84,20 @@ function PaymentCallbackContent() {
         setErrorMessage(data.data.message || "Payment failed");
       } else {
         setStatus("failed");
-        setErrorMessage(data.error || data.data?.message || "Payment verification failed");
+        setErrorMessage(
+          data.error || data.data?.message || "Payment verification failed"
+        );
       }
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error("Verification error:", error);
+      if (error.name === "AbortError") {
+        setStatus("error");
+        setErrorMessage(
+          "Verification is taking too long. Your payment may still have gone through — check your email or contact support with your Paystack reference."
+        );
+        return;
+      }
       setStatus("error");
       setErrorMessage("Unable to verify payment. Please contact support.");
     }
@@ -68,235 +105,210 @@ function PaymentCallbackContent() {
 
   const copyReference = async () => {
     if (!paymentData?.reference) return;
-    
     try {
       await navigator.clipboard.writeText(paymentData.reference);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      const textArea = document.createElement("textarea");
-      textArea.value = paymentData.reference;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-999999px";
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand("copy");
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (e) {
-        console.error("Copy failed:", e);
-      }
-      document.body.removeChild(textArea);
+    } catch {
+      /* ignore */
     }
   };
 
-  const generateEmailLink = () => {
-    if (!paymentData) return "";
-
-    const email = "hokage@hokagecreativelabs.com";
-    const subject = encodeURIComponent(`Payment Confirmation - ${paymentData.reference}`);
-    
-    const body = encodeURIComponent(
-`Hello Hokage Academy Team,
-
-I have successfully completed my payment and would like to confirm my enrollment.
-
-=== PAYMENT RECEIPT ===
-
-Reference Number: ${paymentData.reference}
-Program: ${paymentData.program?.name || "N/A"}
-Amount Paid: ₦${paymentData.amount?.toLocaleString() || "N/A"}
-Payment Date: ${paymentData.paidAt ? new Date(paymentData.paidAt).toLocaleString() : "N/A"}
-Payment Channel: ${paymentData.channel || "N/A"}
-
-=== STUDENT DETAILS ===
-
-Name: ${paymentData.customer?.name || "N/A"}
-Email: ${paymentData.customer?.email || "N/A"}
-
-========================
-
-Please let me know the next steps for onboarding.
-
-Thank you!`
-    );
-
-    return `mailto:${email}?subject=${subject}&body=${body}`;
-  };
-
   return (
-    <>
-      {/* Verifying State */}
+    <OverlayCard className="relative">
       {status === "verifying" && (
-        <div className="bg-[#1a1425] border border-white/10 rounded-3xl p-10 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#7FF41A]/20 flex items-center justify-center">
-            <svg className="animate-spin h-10 w-10 text-[#7FF41A]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+        <div className="p-10 text-center">
+          <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-accent-light/20">
+            <Loader2 className="size-10 animate-spin text-accent-light" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Verifying Payment</h1>
-          <p className="text-gray-400">Please wait while we confirm your payment...</p>
-        </div>
-      )}
-
-      {/* Success State */}
-      {status === "success" && (
-        <div className="bg-[#1a1425] border border-[#7FF41A]/30 rounded-3xl p-10 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#7FF41A]/20 flex items-center justify-center">
-            <svg className="w-10 h-10 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Payment Successful!</h1>
-          <p className="text-gray-400 mb-6">Welcome to Hokage Academy. Your enrollment is confirmed.</p>
-          
-          {paymentData && (
-            <div className="bg-white/5 rounded-xl p-4 mb-6 text-left">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-500 text-sm">Program</span>
-                  <span className="text-white text-sm font-medium">{paymentData.program?.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 text-sm">Amount Paid</span>
-                  <span className="text-[#7FF41A] text-sm font-bold">₦{paymentData.amount?.toLocaleString()}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500 text-sm">Reference</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white text-sm font-mono">{paymentData.reference}</span>
-                    <button
-                      onClick={copyReference}
-                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors group relative"
-                      title="Copy reference"
-                    >
-                      {copied ? (
-                        <svg className="w-4 h-4 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4 text-gray-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      )}
-                      {copied && (
-                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#7FF41A] text-[#0f0a19] text-xs font-medium px-2 py-1 rounded whitespace-nowrap">
-                          Copied!
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span className="text-gray-500 text-sm">Email</span>
-                  <span className="text-white text-sm">{paymentData.customer?.email}</span>
-                </div>
-                
-                {paymentData.paidAt && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 text-sm">Date</span>
-                    <span className="text-white text-sm">{new Date(paymentData.paidAt).toLocaleDateString()}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <a
-            href={generateEmailLink()}
-            className="flex items-center justify-center gap-2 w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium py-3 rounded-xl transition-colors mb-4"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            Send Receipt via Email
-          </a>
-
-          <p className="text-gray-500 text-sm mb-6">
-            A confirmation email has been sent to your inbox. Check your spam folder if you don't see it.
+          <h1 className="font-heading text-2xl font-bold text-white">
+            Verifying payment
+          </h1>
+          <p className="mt-2 font-body text-gray-400">
+            Please wait while we confirm your transaction…
           </p>
-
-          <div className="flex items-center justify-center gap-6">
-            <Link href="/" className="text-gray-400 hover:text-white text-sm font-medium transition-colors underline underline-offset-4">
-              Return to Home
-            </Link>
-            <span className="text-gray-600">•</span>
-            <Link href="/programs" className="text-[#7FF41A] hover:text-[#9fff5a] text-sm font-medium transition-colors underline underline-offset-4">
-              View More Programs
-            </Link>
-          </div>
         </div>
       )}
 
-      {/* Failed State */}
-      {status === "failed" && (
-        <div className="bg-[#1a1425] border border-red-500/30 rounded-3xl p-10 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/20 flex items-center justify-center">
-            <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+      {status === "success" && paymentData && (
+        <>
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#1a1425] px-6 py-4 rounded-t-3xl">
+            <div>
+              <h2 className="font-heading text-xl font-bold text-white">
+                Payment successful
+              </h2>
+              <p className="text-sm text-gray-500">Enrollment confirmed</p>
+            </div>
+            <div className="flex size-10 items-center justify-center rounded-full bg-accent-light/20">
+              <Check className="size-6 text-accent-light" strokeWidth={2.5} />
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Payment Failed</h1>
-          <p className="text-gray-400 mb-6">{errorMessage}</p>
-          
-          <div className="flex items-center justify-center gap-6">
-            <Link href="/programs" className="text-[#7FF41A] hover:text-[#9fff5a] text-sm font-medium transition-colors underline underline-offset-4">
+
+          <div className="p-6">
+            <p className="mb-6 font-body text-gray-400">
+              Welcome to HCL Academy, {paymentData.customer?.name?.split(" ")[0] || "there"}.
+            </p>
+
+            <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+              <Row label="Program" value={paymentData.program?.name} />
+              <Row
+                label="Amount paid"
+                value={formatNaira(paymentData.amount)}
+                valueClassName="text-accent-light font-bold"
+              />
+              <Row label="Student" value={paymentData.customer?.name} />
+              <Row label="Email" value={paymentData.customer?.email} />
+              {paymentData.customer?.phone && (
+                <Row label="Phone" value={paymentData.customer.phone} />
+              )}
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-gray-500">Reference</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-sm text-white">
+                    {paymentData.reference}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={copyReference}
+                    className="rounded-lg bg-white/10 p-1.5 text-gray-400 transition-colors hover:bg-white/20 hover:text-white"
+                    aria-label="Copy reference"
+                  >
+                    {copied ? (
+                      <Check className="size-4 text-accent-light" />
+                    ) : (
+                      <Copy className="size-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              {paymentData.paidAt && (
+                <Row
+                  label="Date"
+                  value={new Date(paymentData.paidAt).toLocaleString("en-NG", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                />
+              )}
+              {paymentData.channel && (
+                <Row label="Payment method" value={paymentData.channel} />
+              )}
+            </div>
+
+            {paymentData.emailsSent ? (
+              <p className="mt-5 text-center font-body text-sm text-gray-500">
+                A confirmation email has been sent to{" "}
+                <span className="text-white">{paymentData.customer?.email}</span>.
+              </p>
+            ) : (
+              <p className="mt-5 text-center font-body text-sm text-gray-500">
+                Save your reference above. Our team will follow up with onboarding
+                details.
+              </p>
+            )}
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/programs"
+                className="flex h-11 flex-1 items-center justify-center rounded-xl bg-accent-light font-heading text-sm font-semibold text-primary transition-colors hover:bg-white"
+              >
+                View Programs
+              </Link>
+              <Link
+                href="/"
+                className="flex h-11 flex-1 items-center justify-center rounded-xl border border-white/20 font-heading text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Return Home
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
+
+      {status === "failed" && (
+        <div className="p-10 text-center">
+          <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-red-500/20">
+            <X className="size-10 text-red-400" />
+          </div>
+          <h1 className="font-heading text-2xl font-bold text-white">
+            Payment failed
+          </h1>
+          <p className="mt-2 font-body text-gray-400">{errorMessage}</p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/programs"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-accent-light px-8 font-heading text-sm font-semibold text-primary"
+            >
               Try Again
             </Link>
-            <span className="text-gray-600">•</span>
-            <Link href="/contact" className="text-gray-400 hover:text-white text-sm font-medium transition-colors underline underline-offset-4">
+            <Link
+              href="/contact"
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-white/20 px-8 font-heading text-sm font-semibold text-white hover:bg-white/10"
+            >
               Contact Support
             </Link>
           </div>
         </div>
       )}
 
-      {/* Error State */}
       {status === "error" && (
-        <div className="bg-[#1a1425] border border-yellow-500/30 rounded-3xl p-10 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-yellow-500/20 flex items-center justify-center">
-            <svg className="w-10 h-10 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+        <div className="p-10 text-center">
+          <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-yellow-500/20">
+            <AlertCircle className="size-10 text-yellow-400" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Something Went Wrong</h1>
-          <p className="text-gray-400 mb-6">{errorMessage}</p>
-          
-          <div className="flex items-center justify-center gap-6">
-            <Link href="/contact" className="text-[#7FF41A] hover:text-[#9fff5a] text-sm font-medium transition-colors underline underline-offset-4">
+          <h1 className="font-heading text-2xl font-bold text-white">
+            Something went wrong
+          </h1>
+          <p className="mt-2 font-body text-gray-400">{errorMessage}</p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/contact"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-accent-light px-8 font-heading text-sm font-semibold text-primary"
+            >
               Contact Support
             </Link>
-            <span className="text-gray-600">•</span>
-            <Link href="/programs" className="text-gray-400 hover:text-white text-sm font-medium transition-colors underline underline-offset-4">
+            <Link
+              href="/programs"
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-white/20 px-8 font-heading text-sm font-semibold text-white hover:bg-white/10"
+            >
               Back to Programs
             </Link>
           </div>
         </div>
       )}
-    </>
+    </OverlayCard>
   );
 }
 
-// Main page component with Suspense boundary
-export default function PaymentCallbackPage() {
+function Row({ label, value, valueClassName }) {
   return (
-    <main className="min-h-screen bg-[#0f0a19] flex items-center justify-center px-4 pt-24 pb-12 relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 right-20 w-[500px] h-[500px] bg-[#7FF41A]/10 rounded-full blur-[150px]"></div>
-        <div className="absolute bottom-20 left-20 w-[400px] h-[400px] bg-purple-600/15 rounded-full blur-[120px]"></div>
-      </div>
-
-      <div className="max-w-md w-full relative z-10">
-        <Suspense fallback={<LoadingState />}>
-          <PaymentCallbackContent />
-        </Suspense>
-      </div>
-    </main>
+    <div className="flex items-start justify-between gap-4">
+      <span className="shrink-0 text-sm text-gray-500">{label}</span>
+      <span
+        className={cn(
+          "text-right text-sm font-medium text-white",
+          valueClassName
+        )}
+      >
+        {value || "—"}
+      </span>
+    </div>
   );
 }
 
+export default function PaymentCallbackPage() {
+  useLockBodyScroll(true);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-none bg-black/80 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payment-callback-title"
+    >
+      <Suspense fallback={<LoadingState />}>
+        <PaymentCallbackContent />
+      </Suspense>
+    </div>
+  );
+}

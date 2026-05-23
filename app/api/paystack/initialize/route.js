@@ -3,6 +3,8 @@ import crypto from "crypto";
 import connectDB from "@/lib/db";
 import Payment from "@/lib/models/Payment";
 import { smartRateLimit } from "@/lib/rateLimit";
+import { getProgramForPayment } from "@/lib/programService";
+import { logError, logWarn } from "@/lib/logger";
 
 // Validate email format
 function isValidEmail(email) {
@@ -31,25 +33,6 @@ function generateReference() {
   const randomPart = crypto.randomBytes(8).toString("hex").toUpperCase();
   return `HCL_${timestamp}_${randomPart}`;
 }
-
-// Valid programs and their prices (in kobo - Paystack uses kobo)
-const VALID_PROGRAMS = {
-  "intro-to-web-development": {
-    name: "Intro to Web Development",
-    amount: 5000000, // N50,000 in kobo
-    description: "8-week comprehensive web development program",
-  },
-  "ui-ux-design-fundamentals": {
-    name: "UI/UX Design Fundamentals",
-    amount: 4500000, // N45,000 in kobo
-    description: "6-week UI/UX design program",
-  },
-  "vibe-coding-essentials": {
-    name: "Vibe Coding Essentials",
-    amount: 3500000, // N35,000 in kobo
-    description: "4-week coding essentials program",
-  },
-};
 
 export async function POST(request) {
   try {
@@ -146,8 +129,9 @@ export async function POST(request) {
       );
     }
 
-    // Validate program exists
-    const program = VALID_PROGRAMS[sanitizedProgramId];
+    await connectDB();
+
+    const program = await getProgramForPayment(sanitizedProgramId);
     if (!program) {
       return NextResponse.json(
         { success: false, error: "Invalid program selected" },
@@ -155,10 +139,17 @@ export async function POST(request) {
       );
     }
 
+    if (!program.available) {
+      return NextResponse.json(
+        { success: false, error: "This program is not open for enrollment yet" },
+        { status: 400 }
+      );
+    }
+
     // Check for Paystack secret key
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackSecretKey) {
-      console.error("PAYSTACK_SECRET_KEY not configured");
+      logError("paystack-init", "PAYSTACK_SECRET_KEY not configured");
       return NextResponse.json(
         { success: false, error: "Payment service unavailable" },
         { status: 503 }
@@ -169,15 +160,12 @@ export async function POST(request) {
     const isProduction = process.env.NODE_ENV === "production";
     const isTestKey = paystackSecretKey.startsWith("sk_test_");
     if (isProduction && isTestKey) {
-      console.error("WARNING: Using test Paystack key in production!");
+      logWarn("paystack-init", "Test Paystack key in production");
       // Optionally block this in production
     }
 
     // Generate unique reference
     const reference = generateReference();
-
-    // Connect to database
-    await connectDB();
 
     // Create payment record BEFORE calling Paystack
     const payment = new Payment({
@@ -249,7 +237,10 @@ export async function POST(request) {
     const paystackData = await paystackResponse.json();
 
     if (!paystackResponse.ok || !paystackData.status) {
-      console.error("Paystack initialization failed:", paystackData);
+      logError(
+        "paystack-init",
+        paystackData.message || "Payment initialization failed"
+      );
 
       // Update payment record to failed
       payment.status = "failed";
@@ -275,7 +266,7 @@ export async function POST(request) {
       },
     });
   } catch (error) {
-    console.error("Payment initialization error:", error);
+    logError("paystack-init", error);
     return NextResponse.json(
       { success: false, error: "An unexpected error occurred" },
       { status: 500 }

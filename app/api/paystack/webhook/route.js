@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import connectDB from "@/lib/db";
 import Payment from "@/lib/models/Payment";
+import { processPaymentEmailNotification } from "@/lib/paymentNotifications";
+import { logError, logInfo, logWarn } from "@/lib/logger";
 
 // Verify Paystack webhook signature
 function verifyWebhookSignature(payload, signature, secret) {
@@ -17,7 +19,7 @@ export async function POST(request) {
     const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
 
     if (!paystackSecretKey) {
-      console.error("PAYSTACK_SECRET_KEY not configured");
+      logError("webhook", "PAYSTACK_SECRET_KEY not configured");
       return NextResponse.json(
         { success: false, error: "Configuration error" },
         { status: 500 }
@@ -31,7 +33,7 @@ export async function POST(request) {
     const signature = request.headers.get("x-paystack-signature");
 
     if (!signature) {
-      console.error("No Paystack signature in webhook request");
+      logWarn("webhook", "Missing Paystack signature");
       return NextResponse.json(
         { success: false, error: "No signature provided" },
         { status: 401 }
@@ -40,7 +42,7 @@ export async function POST(request) {
 
     // Verify the signature
     if (!verifyWebhookSignature(rawBody, signature, paystackSecretKey)) {
-      console.error("Invalid Paystack webhook signature");
+      logWarn("webhook", "Invalid Paystack signature");
       return NextResponse.json(
         { success: false, error: "Invalid signature" },
         { status: 401 }
@@ -52,7 +54,7 @@ export async function POST(request) {
     try {
       event = JSON.parse(rawBody);
     } catch {
-      console.error("Failed to parse webhook payload");
+      logWarn("webhook", "Invalid JSON payload");
       return NextResponse.json(
         { success: false, error: "Invalid payload" },
         { status: 400 }
@@ -72,39 +74,39 @@ export async function POST(request) {
         const payment = await Payment.findByReference(reference);
 
         if (!payment) {
-          // Payment not found - might be from another system or test
-          console.warn(`Payment not found for reference: ${reference}`);
-          // Still return 200 to acknowledge receipt
+          logWarn("webhook", `Payment not found: ${reference}`);
           return NextResponse.json({ success: true, received: true });
         }
 
-        // Check if already processed (idempotency)
         if (payment.status === "completed") {
-          console.log(`Payment ${reference} already processed, skipping`);
-          return NextResponse.json({ 
-            success: true, 
-            received: true, 
-            message: "Already processed" 
+          if (!payment.confirmationEmailsSent) {
+            await processPaymentEmailNotification(payment.reference);
+          }
+          logInfo("webhook", `Payment already processed: ${reference}`);
+          return NextResponse.json({
+            success: true,
+            received: true,
+            message: "Already processed",
           });
         }
 
         // Mark as completed
         await payment.markAsCompleted(data);
 
-        console.log("=== SUCCESSFUL PAYMENT ===");
-        console.log("Reference:", reference);
-        console.log("Amount:", data.amount / 100, "NGN");
-        console.log("Email:", data.customer.email);
-        console.log("Program:", payment.programName);
-        console.log("Student:", payment.fullName);
-        console.log("==========================");
+        // Sync amount from Paystack (source of truth for what was charged)
+        if (data.amount && data.amount !== payment.amount) {
+          payment.amount = data.amount;
+          await payment.save();
+        }
 
-        // TODO: Send confirmation email
-        // await sendConfirmationEmail(payment);
+        const emailResult = await processPaymentEmailNotification(
+          payment.reference
+        );
+        if (!emailResult.sent && !emailResult.skipped) {
+          logWarn("webhook", `Email failed for ${reference}`);
+        }
 
-        // TODO: Add to student enrollment system
-        // await enrollStudent(payment);
-
+        logInfo("webhook", `Payment completed: ${reference}`);
         break;
       }
 
@@ -115,31 +117,22 @@ export async function POST(request) {
         const payment = await Payment.findByReference(reference);
 
         if (!payment) {
-          console.warn(`Payment not found for failed charge: ${reference}`);
+          logWarn("webhook", `Failed payment not found: ${reference}`);
           return NextResponse.json({ success: true, received: true });
         }
 
-        // Check if already processed
         if (payment.status !== "pending") {
-          console.log(`Payment ${reference} already processed (${payment.status})`);
+          logInfo("webhook", `Failed charge already handled: ${reference}`);
           return NextResponse.json({ success: true, received: true });
         }
 
-        // Mark as failed
         await payment.markAsFailed(data.gateway_response || "Payment failed");
-
-        console.log("=== FAILED PAYMENT ===");
-        console.log("Reference:", reference);
-        console.log("Email:", data.customer?.email);
-        console.log("Reason:", data.gateway_response);
-        console.log("======================");
-
+        logInfo("webhook", `Payment failed: ${reference}`);
         break;
       }
 
       case "transfer.success": {
-        // Handle transfer success (for refunds)
-        console.log("Transfer successful:", event.data.reference);
+        logInfo("webhook", `Transfer success: ${event.data.reference}`);
         
         // Update payment if this is a refund
         const reference = event.data.reason?.includes("Refund:")
@@ -158,18 +151,18 @@ export async function POST(request) {
       }
 
       case "transfer.failed": {
-        console.log("Transfer failed:", event.data.reference);
+        logWarn("webhook", `Transfer failed: ${event.data.reference}`);
         break;
       }
 
       default:
-        console.log("Unhandled webhook event:", event.event);
+        logInfo("webhook", `Unhandled event: ${event.event}`);
     }
 
     // Always return 200 to acknowledge receipt
     return NextResponse.json({ success: true, received: true });
   } catch (error) {
-    console.error("Webhook processing error:", error);
+    logError("webhook", error);
     // Still return 200 to prevent Paystack from retrying indefinitely
     // Log the error for investigation
     return NextResponse.json({ success: true, received: true, error: "Internal error logged" });

@@ -1,6 +1,4 @@
-
-import FAQs from '@/components/sections/FAQs';
-import React from 'react';
+import FAQs from "@/components/sections/FAQs";
 
 export default function AboutPage() {
   return (
@@ -19,10 +17,10 @@ export default function AboutPage() {
             </defs>
             <rect width="100%" height="100%" fill="url(#dots)" />
           </svg>
-          <h1 className="relative z-10 text-4xl md:text-5xl font-heading font-bold mb-4 text-primary-foreground">
+          <h1 className="relative z-10 font-heading text-5xl md:text-7xl font-extrabold text-primary-foreground mb-8 leading-tight drop-shadow-xl">
             We've Been Where You Are.
           </h1>
-          <p className="relative z-10 text-lg md:text-xl max-w-2xl text-primary-foreground/80">
+          <p className="relative z-10 font-body text-xl md:text-2xl max-w-xl mx-auto font-medium text-primary-foreground/80">
             Every founder and instructor here once stood at the starting line, unsure what to do next.
           </p>
         </section>
@@ -90,7 +88,6 @@ export default function AboutPage() {
       <section className="max-w-5xl mx-auto w-full py-16 md:py-24 px-4" aria-labelledby="pipeline-heading">
         <h2 id="pipeline-heading" className="text-2xl md:text-3xl font-heading font-bold text-primary text-center mb-10">The Pipeline</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Step 1: Selection */}
           <article className="bg-white rounded-2xl shadow-card p-8 flex flex-col items-center text-center" aria-labelledby="get-in-heading">
             <span className="inline-flex items-center justify-center w-16 h-16 mb-4" aria-hidden="true">
               <svg width="40" height="40" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#7FF41A" fillOpacity="0.15"/><path d="M28 16l-8 8-4-4" stroke="#7FF41A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -98,7 +95,6 @@ export default function AboutPage() {
             <h3 id="get-in-heading" className="font-heading text-lg font-bold mb-2 text-primary">Get In</h3>
             <p className="text-gray-700">Apply and get selected to join a cohort of ambitious creators. We look for drive, curiosity, and a willingness to learn. No experience required.</p>
           </article>
-          {/* Step 2: Learn & Build */}
           <article className="bg-white rounded-2xl shadow-card p-8 flex flex-col items-center text-center" aria-labelledby="learn-build-heading">
             <span className="inline-flex items-center justify-center w-16 h-16 mb-4" aria-hidden="true">
               <svg width="40" height="40" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#6C47FF" fillOpacity="0.15"/><path d="M14 26v-2a4 4 0 014-4h4a4 4 0 014 4v2M20 18a4 4 0 100-8 4 4 0 000 8z" stroke="#6C47FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -106,7 +102,6 @@ export default function AboutPage() {
             <h3 id="learn-build-heading" className="font-heading text-lg font-bold mb-2 text-primary">Learn & Build</h3>
             <p className="text-gray-700">Spend 8 weeks learning, building, and collaborating on real projects. Work solo and in groups, gaining hands-on experience and a portfolio that stands out.</p>
           </article>
-          {/* Step 3: Community Immersion */}
           <article className="bg-white rounded-2xl shadow-card p-8 flex flex-col items-center text-center" aria-labelledby="community-heading">
             <span className="inline-flex items-center justify-center w-16 h-16 mb-4" aria-hidden="true">
               <svg width="40" height="40" fill="none" viewBox="0 0 40 40"><circle cx="20" cy="20" r="20" fill="#F4B41A" fillOpacity="0.15"/><path d="M12 24c0-2.21 3.58-4 8-4s8 1.79 8 4v2a2 2 0 01-2 2H14a2 2 0 01-2-2v-2zM20 18a4 4 0 100-8 4 4 0 000 8z" stroke="#F4B41A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>

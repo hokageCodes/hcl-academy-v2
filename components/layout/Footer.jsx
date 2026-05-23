@@ -1,48 +1,139 @@
-// Footer component for global layout
-import { ArrowUp, Twitter, Instagram, Linkedin } from "lucide-react";
+import Link from "next/link";
 import Image from "next/image";
+import { ArrowUp, Instagram, Linkedin, Twitter } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const exploreLinks = [
+  { href: "/", label: "Home" },
+  { href: "/programs", label: "Programs" },
+  { href: "/about", label: "About" },
+  { href: "/cohorts", label: "Cohorts" },
+];
+
+const academyLinks = [
+  { href: "/contact", label: "Contact" },
+  { href: "/admissions", label: "Admissions" },
+  { href: "/mentorship", label: "Mentorship" },
+];
+
+const legalLinks = [
+  { href: "#", label: "Privacy" },
+  { href: "#", label: "Terms" },
+];
+
+const socialLinks = [
+  { href: "#", label: "Twitter", icon: Twitter },
+  { href: "#", label: "Instagram", icon: Instagram },
+  { href: "#", label: "LinkedIn", icon: Linkedin },
+];
+
+const footerLinkClass =
+  "font-body text-sm text-neutral-text/75 transition-colors hover:text-primary";
+
+function FooterLinkGroup({ title, links }) {
+  return (
+    <div>
+      <h3 className="mb-4 font-heading text-sm font-bold uppercase tracking-wide text-neutral-text">
+        {title}
+      </h3>
+      <ul className="flex flex-col gap-3">
+        {links.map((link) => (
+          <li key={link.label}>
+            <Link href={link.href} className={footerLinkClass}>
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-white border-t border-gray-100 px-0 pt-8 pb-0 text-gray-700 text-sm">
-      <div className="max-w-7xl mx-auto flex flex-col gap-0">
-        {/* Top Layer */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-4 pb-4 border-b border-gray-100">
-          {/* Logo left */}
-          <div className="flex items-center min-w-[120px] justify-center md:justify-start w-full md:w-auto">
-            <Image src="/hcl-logo.png" alt="HCL Academy Logo" width={48} height={48} className="h-12 w-auto rounded-xl" priority />
-          </div>
-          {/* Nav links center */}
-          <nav className="flex-1 flex justify-center w-full">
-            <div className="flex gap-8 items-center font-heading text-base font-medium tracking-tight">
-              <a href="#" className="hover:text-accent-light transition-colors">Home</a>
-              <a href="#" className="hover:text-accent-light transition-colors">Programs</a>
-              <a href="#" className="hover:text-accent-light transition-colors">About</a>
+    <footer className="w-full border-t border-neutral-gray bg-white">
+      <div className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+          <div className="sm:col-span-2 lg:col-span-5">
+            <Link
+              href="/"
+              className="inline-flex rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-light/50 focus-visible:ring-offset-2"
+            >
+              <Image
+                src="/hcl-logo.png"
+                alt="HCL Academy Logo"
+                width={64}
+                height={64}
+                className="h-14 w-auto rounded-xl"
+              />
+            </Link>
+            <p className="mt-5 max-w-sm font-body text-sm leading-relaxed text-neutral-text/75">
+              Learn in-demand digital skills from scratch. Build real projects
+              with a community that has your back.
+            </p>
+            <div className="mt-6 flex items-center gap-3">
+              {socialLinks.map(({ href, label, icon: Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  rel="noopener noreferrer"
+                  className="flex size-10 items-center justify-center rounded-xl border border-neutral-gray/80 bg-white text-neutral-text transition-colors hover:border-accent-light/50 hover:text-primary"
+                >
+                  <Icon className="size-5" />
+                </a>
+              ))}
             </div>
-          </nav>
-          {/* Social links right */}
-          <div className="flex items-center gap-4 min-w-[120px] justify-center md:justify-end w-full md:w-auto">
-            <a href="#" aria-label="Twitter" className="hover:text-accent-light transition-colors" rel="noopener noreferrer"><Twitter className="w-5 h-5" /></a>
-            <a href="#" aria-label="Instagram" className="hover:text-accent-light transition-colors" rel="noopener noreferrer"><Instagram className="w-5 h-5" /></a>
-            <a href="#" aria-label="LinkedIn" className="hover:text-accent-light transition-colors" rel="noopener noreferrer"><Linkedin className="w-5 h-5" /></a>
+          </div>
+
+          <div className="lg:col-span-2">
+            <FooterLinkGroup title="Explore" links={exploreLinks} />
+          </div>
+
+          <div className="lg:col-span-2">
+            <FooterLinkGroup title="Academy" links={academyLinks} />
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-3">
+            <h3 className="mb-4 font-heading text-sm font-bold uppercase tracking-wide text-neutral-text">
+              Get started
+            </h3>
+            <p className="font-body text-sm leading-relaxed text-neutral-text/75">
+              Ready to learn web development or UI/UX? Browse our programs and
+              apply today.
+            </p>
+            <Link
+              href="/programs"
+              className={cn(
+                "mt-5 inline-flex items-center rounded-xl bg-primary px-6 py-3 font-heading text-sm font-semibold text-white transition-colors hover:bg-accent-light hover:text-primary"
+              )}
+            >
+              View Programs
+            </Link>
           </div>
         </div>
-        {/* Bottom Layer */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-4 py-4">
-          {/* Privacy & Terms left */}
-          <div className="flex gap-4 w-full md:w-auto justify-center md:justify-start">
-            <a href="#" className="hover:text-accent-light transition-colors">Privacy</a>
-            <a href="#" className="hover:text-accent-light transition-colors">Terms</a>
-          </div>
-          {/* Copyright center */}
-          <div className="w-full md:w-auto text-center font-heading text-base font-semibold text-gray-500">
+
+        <div className="mt-14 flex flex-col gap-6 border-t border-neutral-gray/80 pt-8 md:flex-row md:items-center md:justify-between">
+          <p className="font-body text-sm text-neutral-text/60">
             &copy; {new Date().getFullYear()} HCL Academy. All rights reserved.
-          </div>
-          {/* Back to top right */}
-          <div className="flex w-full md:w-auto justify-center md:justify-end">
-            <a href="#top" className="flex items-center gap-1 hover:text-accent-light transition-colors group">
-              <span className="hidden sm:inline">Back to top</span>
-              <ArrowUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
+          </p>
+
+          <div className="flex flex-wrap items-center gap-6">
+            {legalLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={footerLinkClass}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <a
+              href="#top"
+              className="inline-flex items-center gap-2 font-heading text-sm font-semibold text-neutral-text transition-colors hover:text-primary"
+            >
+              Back to top
+              <ArrowUp className="size-4" />
             </a>
           </div>
         </div>
@@ -50,6 +141,3 @@ export default function Footer() {
     </footer>
   );
 }
-  <div className="max-w-7xl mx-auto">
-    <span>&copy; {new Date().getFullYear()} HCL Academy. All rights reserved.</span>
-  </div>

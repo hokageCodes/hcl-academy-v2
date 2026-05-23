@@ -17,7 +17,7 @@ const faqs = [
 	{
 		question: "Do I need prior experience?",
 		answer:
-			"No prior experience is required for our beginner programs. Advanced courses may have prerequisites, which are clearly stated in the course details.",
+			"No prior experience is required for our beginner programs. Advanced courses may have prerequisites, which are always clearly stated in the course details.",
 	},
 	{
 		question: "How do I register?",
@@ -27,7 +27,7 @@ const faqs = [
 	{
 		question: "Is there a certificate?",
 		answer:
-			"Yes, you will receive a certificate of completion for each program you finish. This can be shared on your resume",
+			"Yes, you will receive a certificate of completion for each program you finish.",
 	},
 ];
 

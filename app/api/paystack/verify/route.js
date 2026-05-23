@@ -2,6 +2,29 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Payment from "@/lib/models/Payment";
 import { smartRateLimit } from "@/lib/rateLimit";
+import { schedulePaymentEmailNotification } from "@/lib/paymentNotifications";
+import { koboToNaira } from "@/lib/programs";
+
+function paymentToVerifyPayload(payment) {
+  return {
+    status: "success",
+    reference: payment.reference,
+    amount: koboToNaira(payment.amount),
+    currency: payment.currency,
+    paidAt: payment.paidAt,
+    channel: payment.channel,
+    customer: {
+      email: payment.email,
+      name: payment.fullName,
+      phone: payment.phone,
+    },
+    program: {
+      name: payment.programName,
+      id: payment.programId,
+    },
+    emailsSent: payment.confirmationEmailsSent,
+  };
+}
 
 // Tightened reference validation
 function isValidReference(ref) {
@@ -67,24 +90,12 @@ export async function GET(request) {
     // If payment is already completed in our DB, return success immediately
     // This is faster and doesn't rely on Paystack being available
     if (payment.status === "completed") {
+      if (!payment.confirmationEmailsSent) {
+        schedulePaymentEmailNotification(payment.reference);
+      }
       return NextResponse.json({
         success: true,
-        data: {
-          status: "success",
-          reference: payment.reference,
-          amount: payment.amount / 100, // Convert from kobo to naira
-          currency: payment.currency,
-          paidAt: payment.paidAt,
-          channel: payment.channel,
-          customer: {
-            email: payment.email,
-            name: payment.fullName,
-          },
-          program: {
-            name: payment.programName,
-            id: payment.programId,
-          },
-        },
+        data: paymentToVerifyPayload(payment),
       });
     }
 
@@ -108,6 +119,7 @@ export async function GET(request) {
             Authorization: `Bearer ${paystackSecretKey}`,
             "Content-Type": "application/json",
           },
+          signal: AbortSignal.timeout(20000),
         }
       );
 
@@ -118,27 +130,18 @@ export async function GET(request) {
 
         // Update our database based on Paystack response
         if (data.status === "success") {
-          // Mark as completed in our DB
           await payment.markAsCompleted(data);
+
+          if (data.amount && data.amount !== payment.amount) {
+            payment.amount = data.amount;
+            await payment.save();
+          }
+
+          schedulePaymentEmailNotification(payment.reference);
 
           return NextResponse.json({
             success: true,
-            data: {
-              status: "success",
-              reference: data.reference,
-              amount: data.amount / 100,
-              currency: data.currency,
-              paidAt: data.paid_at,
-              channel: data.channel,
-              customer: {
-                email: data.customer.email,
-                name: payment.fullName,
-              },
-              program: {
-                name: payment.programName,
-                id: payment.programId,
-              },
-            },
+            data: paymentToVerifyPayload(payment),
           });
         } else if (data.status === "abandoned") {
           payment.status = "abandoned";

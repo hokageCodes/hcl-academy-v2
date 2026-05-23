@@ -25,8 +25,8 @@ function WhyChooseUs() {
         {/* LEFT — Image only */}
         <Card className="bg-white border-gray-200 shadow-md p-0 flex items-center justify-center min-h-[520px] lg:min-h-[600px]">
           <Image
-            src="/hcl-about.jpeg"
-            alt="Students collaborating"
+            src="/hcl-about.png"
+            alt="HCL Academy students collaborating"
             width={700}
             height={600}
             className="object-cover w-full h-full min-h-[520px] lg:min-h-[600px] rounded-3xl"
