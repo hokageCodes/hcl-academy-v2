@@ -179,6 +179,7 @@ export async function POST(request) {
       amount: program.amount,
       currency: "NGN",
       status: "pending",
+      paymentMethod: "paystack",
       ipAddress: ip,
       userAgent: userAgent.slice(0, 500),
     });

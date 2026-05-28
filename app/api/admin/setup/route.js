@@ -59,10 +59,36 @@ export async function POST(request) {
     // Check if any admin exists
     const existingAdmin = await Admin.findOne({});
     if (existingAdmin) {
-      return NextResponse.json(
-        { success: false, error: "Admin already exists. Use the dashboard to create more." },
-        { status: 400 }
-      );
+      // Recovery path: allow password reset for an existing admin when setup secret is provided.
+      // This is useful if the original password is unknown but server access is still available.
+      const existingByEmail = await Admin.findByEmail(email);
+      if (!existingByEmail) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Admin already exists with a different email. Use that email or update it from dashboard after login.",
+          },
+          { status: 400 }
+        );
+      }
+
+      existingByEmail.setPassword(password);
+      existingByEmail.name = name?.trim() || existingByEmail.name;
+      existingByEmail.isActive = true;
+      existingByEmail.loginAttempts = 0;
+      existingByEmail.lockUntil = null;
+      await existingByEmail.save();
+
+      return NextResponse.json({
+        success: true,
+        message: "Admin password reset successfully.",
+        data: {
+          email: existingByEmail.email,
+          name: existingByEmail.name,
+          role: existingByEmail.role,
+        },
+      });
     }
 
     // Create super admin

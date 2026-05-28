@@ -10,7 +10,14 @@ const STATUS_COLORS = {
   refunded: "bg-purple-500/20 text-purple-400 border-purple-500/30",
 };
 
-function PaymentDetailModal({ payment, onClose, onVerify, isVerifying }) {
+function PaymentDetailModal({
+  payment,
+  onClose,
+  onVerify,
+  isVerifying,
+  onUpdateStatus,
+  isUpdatingStatus,
+}) {
   if (!payment) return null;
 
   const formatCurrency = (amount) => {
@@ -113,6 +120,12 @@ function PaymentDetailModal({ payment, onClose, onVerify, isVerifying }) {
                 <p className="text-white capitalize">{payment.channel || "—"}</p>
               </div>
               <div>
+                <p className="text-gray-500 text-xs mb-1">Method</p>
+                <p className="text-white capitalize">
+                  {(payment.paymentMethod || "paystack").replace("_", " ")}
+                </p>
+              </div>
+              <div>
                 <p className="text-gray-500 text-xs mb-1">Created At</p>
                 <p className="text-white text-sm">{formatDate(payment.createdAt)}</p>
               </div>
@@ -123,32 +136,58 @@ function PaymentDetailModal({ payment, onClose, onVerify, isVerifying }) {
             </div>
           </div>
 
+          {(payment.proofUrl || payment.proofNote) && (
+            <div className="bg-white/5 rounded-xl p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Transfer Proof</h3>
+              {payment.proofUrl ? (
+                <div>
+                  <p className="text-gray-500 text-xs mb-1">Proof URL</p>
+                  <a
+                    href={payment.proofUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#7FF41A] text-sm break-all underline"
+                  >
+                    {payment.proofUrl}
+                  </a>
+                </div>
+              ) : null}
+              {payment.proofNote ? (
+                <div>
+                  <p className="text-gray-500 text-xs mb-1">Proof Note</p>
+                  <p className="text-white text-sm whitespace-pre-wrap">{payment.proofNote}</p>
+                </div>
+              ) : null}
+            </div>
+          )}
+
           {/* Actions */}
           <div className="space-y-3">
             {/* Re-verify Button for Pending Payments */}
             {payment.status === "pending" && (
-              <button
-                onClick={() => onVerify(payment.reference)}
-                disabled={isVerifying}
-                className="w-full flex items-center justify-center gap-2 bg-[#7FF41A] hover:bg-[#6ad815] text-[#0f0a19] font-semibold py-3 rounded-lg transition-colors text-sm disabled:opacity-50"
-              >
-                {isVerifying ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Verifying with Paystack...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Re-verify with Paystack
-                  </>
-                )}
-              </button>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                <button
+                  onClick={() => onVerify(payment.reference)}
+                  disabled={isVerifying}
+                  className="w-full flex items-center justify-center gap-2 bg-[#7FF41A] hover:bg-[#6ad815] text-[#0f0a19] font-semibold py-3 rounded-lg transition-colors text-sm disabled:opacity-50"
+                >
+                  {isVerifying ? "Verifying..." : "Re-verify"}
+                </button>
+                <button
+                  onClick={() => onUpdateStatus(payment.id, "completed")}
+                  disabled={isUpdatingStatus}
+                  className="w-full flex items-center justify-center gap-2 bg-green-500/30 hover:bg-green-500/40 text-green-300 font-semibold py-3 rounded-lg transition-colors text-sm disabled:opacity-50"
+                >
+                  {isUpdatingStatus ? "Updating..." : "Mark completed"}
+                </button>
+                <button
+                  onClick={() => onUpdateStatus(payment.id, "failed")}
+                  disabled={isUpdatingStatus}
+                  className="w-full flex items-center justify-center gap-2 bg-red-500/30 hover:bg-red-500/40 text-red-300 font-semibold py-3 rounded-lg transition-colors text-sm disabled:opacity-50"
+                >
+                  Mark failed
+                </button>
+              </div>
             )}
 
             <div className="flex gap-3">
@@ -189,6 +228,7 @@ function PaymentsContent() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [verifyResult, setVerifyResult] = useState(null);
 
   const fetchPayments = useCallback(async (page = 1) => {
@@ -320,6 +360,43 @@ function PaymentsContent() {
       setVerifyResult({ type: "error", message: "Failed to verify payment" });
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const handleUpdateStatus = async (paymentId, nextStatus) => {
+    setIsUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/admin/payments/${paymentId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to update payment status");
+      }
+
+      setVerifyResult({
+        type: "success",
+        message: `Payment marked as ${nextStatus}`,
+      });
+
+      setPayments((prev) =>
+        prev.map((p) => (p.id === paymentId ? { ...p, status: nextStatus } : p))
+      );
+      setSelectedPayment((prev) =>
+        prev?.id === paymentId ? { ...prev, status: nextStatus } : prev
+      );
+    } catch (err) {
+      setVerifyResult({
+        type: "error",
+        message: err.message || "Failed to update payment status",
+      });
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -573,6 +650,8 @@ function PaymentsContent() {
           }}
           onVerify={handleVerify}
           isVerifying={isVerifying}
+          onUpdateStatus={handleUpdateStatus}
+          isUpdatingStatus={isUpdatingStatus}
         />
       )}
     </div>

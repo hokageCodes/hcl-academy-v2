@@ -84,7 +84,11 @@ export async function GET(request) {
       amount: p.amount / 100, // Convert to Naira
       currency: p.currency,
       status: p.status,
+      paymentMethod: p.paymentMethod || "paystack",
       channel: p.channel,
+      proofUrl: p.proofUrl || null,
+      proofNote: p.proofNote || null,
+      adminNotes: p.adminNotes || null,
       paidAt: p.paidAt,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,

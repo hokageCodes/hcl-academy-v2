@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 
+const PENDING_BANK_TRANSFER_STORAGE_KEY = "hcl_pending_bank_transfer_v1";
+const PENDING_BANK_TRANSFER_TTL_MS = 48 * 60 * 60 * 1000;
+
 function formatNaira(amount) {
   return `₦${amount.toLocaleString("en-NG")}`;
 }
@@ -14,19 +17,88 @@ export default function PaymentModal({ isOpen, onClose, program }) {
     lastName: "",
     email: "",
     phone: "",
+    transferReference: "",
+    proofUrl: "",
+    proofNote: "",
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [bankTransferInfo, setBankTransferInfo] = useState(null);
+  const [copiedField, setCopiedField] = useState("");
+  const [transferSubmitted, setTransferSubmitted] = useState(false);
+  const [restoredPendingTransfer, setRestoredPendingTransfer] = useState(false);
+
+  const clearPendingBankTransfer = useCallback(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(PENDING_BANK_TRANSFER_STORAGE_KEY);
+  }, []);
+
+  const persistPendingBankTransfer = useCallback((info) => {
+    if (typeof window === "undefined" || !info?.reference || !program?.programId) return;
+    const payload = {
+      reference: info.reference,
+      bankDetails: info.bankDetails,
+      programId: program.programId,
+      savedAt: Date.now(),
+    };
+    window.localStorage.setItem(
+      PENDING_BANK_TRANSFER_STORAGE_KEY,
+      JSON.stringify(payload)
+    );
+  }, [program?.programId]);
 
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setFormData({ firstName: "", lastName: "", email: "", phone: "" });
+      const defaultFormData = {
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        transferReference: "",
+        proofUrl: "",
+        proofNote: "",
+      };
+      setFormData(defaultFormData);
       setErrors({});
       setSubmitError("");
+      setCopiedField("");
+      setTransferSubmitted(false);
+      setRestoredPendingTransfer(false);
+
+      if (typeof window !== "undefined") {
+        try {
+          const raw = window.localStorage.getItem(PENDING_BANK_TRANSFER_STORAGE_KEY);
+          if (!raw) {
+            setBankTransferInfo(null);
+            return;
+          }
+          const parsed = JSON.parse(raw);
+          const isExpired =
+            !parsed?.savedAt || Date.now() - parsed.savedAt > PENDING_BANK_TRANSFER_TTL_MS;
+          const wrongProgram = parsed?.programId !== program?.programId;
+          const invalid = !parsed?.reference || !parsed?.bankDetails;
+          if (isExpired || wrongProgram || invalid) {
+            clearPendingBankTransfer();
+            setBankTransferInfo(null);
+            return;
+          }
+          setBankTransferInfo({
+            reference: parsed.reference,
+            bankDetails: parsed.bankDetails,
+          });
+          setRestoredPendingTransfer(true);
+        } catch {
+          clearPendingBankTransfer();
+          setBankTransferInfo(null);
+        }
+      } else {
+        setBankTransferInfo(null);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, program?.programId, clearPendingBankTransfer]);
 
   useLockBodyScroll(isOpen);
 
@@ -102,7 +174,7 @@ export default function PaymentModal({ isOpen, onClose, program }) {
     setSubmitError("");
 
     try {
-      const response = await fetch("/api/paystack/initialize", {
+      const response = await fetch("/api/payments/bank-transfer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -122,11 +194,13 @@ export default function PaymentModal({ isOpen, onClose, program }) {
         throw new Error(data.error || "Failed to initialize payment");
       }
 
-      if (data.success && data.data.authorization_url) {
-        // Redirect to Paystack checkout
-        window.location.href = data.data.authorization_url;
+      if (data.success && data.data.reference) {
+        setBankTransferInfo(data.data);
+        setRestoredPendingTransfer(false);
+        persistPendingBankTransfer(data.data);
+        setIsSubmitting(false);
       } else {
-        throw new Error("Invalid response from payment server");
+        throw new Error(data.error || "Invalid response from server");
       }
     } catch (error) {
       // Avoid logging payment details in the browser console
@@ -134,6 +208,121 @@ export default function PaymentModal({ isOpen, onClose, program }) {
       setIsSubmitting(false);
     }
   };
+
+  const handleCopy = async (value, field) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(""), 1800);
+    } catch {
+      setSubmitError("Could not copy. Please copy manually.");
+    }
+  };
+
+  const handleProofUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 8 * 1024 * 1024;
+    if (!file.type.startsWith("image/")) {
+      setSubmitError("Receipt must be an image file.");
+      return;
+    }
+    if (file.size > maxSize) {
+      setSubmitError("Receipt image must be 8MB or less.");
+      return;
+    }
+
+    setIsUploadingProof(true);
+    setSubmitError("");
+
+    try {
+      const sigResponse = await fetch("/api/uploads/receipt-signature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const sigData = await sigResponse.json();
+      if (!sigResponse.ok || !sigData.success) {
+        throw new Error(sigData.error || "Failed to prepare upload");
+      }
+
+      const { cloudName, apiKey, folder, timestamp, signature } = sigData.data;
+
+      const uploadForm = new FormData();
+      uploadForm.append("file", file);
+      uploadForm.append("api_key", apiKey);
+      uploadForm.append("folder", folder);
+      uploadForm.append("timestamp", String(timestamp));
+      uploadForm.append("signature", signature);
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: uploadForm,
+        }
+      );
+      const uploadData = await uploadResponse.json();
+      if (!uploadResponse.ok || !uploadData.secure_url) {
+        throw new Error(uploadData.error?.message || "Upload failed");
+      }
+
+      setFormData((prev) => ({ ...prev, proofUrl: uploadData.secure_url }));
+    } catch (error) {
+      setSubmitError(error.message || "Could not upload receipt");
+    } finally {
+      setIsUploadingProof(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleTransferSubmit = async (e) => {
+    e.preventDefault();
+    if (!bankTransferInfo?.reference) return;
+    if (!formData.transferReference?.trim()) {
+      setSubmitError("Please enter your transfer reference.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      const response = await fetch("/api/payments/bank-transfer/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reference: bankTransferInfo.reference,
+          transferReference: formData.transferReference.trim(),
+          proofUrl: formData.proofUrl.trim(),
+          proofNote: formData.proofNote.trim(),
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Could not submit transfer proof");
+      }
+      if (data.data?.emailWarning) {
+        setSubmitError(data.data.emailWarning);
+      }
+      setTransferSubmitted(true);
+      clearPendingBankTransfer();
+    } catch (error) {
+      setSubmitError(error.message || "Could not submit transfer proof");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!bankTransferInfo?.reference) return;
+    setFormData((prev) => {
+      if (prev.transferReference?.trim()) return prev;
+      return { ...prev, transferReference: bankTransferInfo.reference };
+    });
+  }, [bankTransferInfo]);
 
   if (!isOpen) return null;
 
@@ -203,7 +392,165 @@ export default function PaymentModal({ isOpen, onClose, program }) {
             </div>
           )}
 
-          {/* Form */}
+          {bankTransferInfo ? (
+            <div className="space-y-5">
+              <div className="rounded-xl border border-[#7FF41A]/30 bg-[#7FF41A]/10 p-4">
+                <p className="text-sm font-semibold text-[#7FF41A]">
+                  Enrollment received
+                </p>
+                <p className="mt-1 text-sm text-gray-300">
+                  Transfer the exact amount below and include your reference when sending proof.
+                </p>
+              </div>
+              {restoredPendingTransfer && (
+                <div className="rounded-xl border border-blue-400/30 bg-blue-500/10 p-3">
+                  <p className="text-xs text-blue-200">
+                    Restored your pending transfer details so you can continue proof submission.
+                  </p>
+                </div>
+              )}
+              <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4 text-sm">
+                <p className="text-gray-400">Bank</p>
+                <p className="font-semibold text-white">{bankTransferInfo.bankDetails.bankName}</p>
+                <p className="text-gray-400">Account Name</p>
+                <p className="font-semibold text-white">{bankTransferInfo.bankDetails.accountName}</p>
+                <p className="text-gray-400">Account Number</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-lg font-bold text-[#7FF41A]">
+                    {bankTransferInfo.bankDetails.accountNumber}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleCopy(
+                        bankTransferInfo.bankDetails.accountNumber,
+                        "accountNumber"
+                      )
+                    }
+                    className="rounded-md bg-white/10 p-1.5 text-gray-300 transition-colors hover:bg-white/20 hover:text-white"
+                    aria-label="Copy account number"
+                  >
+                    {copiedField === "accountNumber" ? (
+                      <svg className="h-4 w-4 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <p className="text-gray-400">Reference</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-sm text-white">{bankTransferInfo.reference}</p>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(bankTransferInfo.reference, "reference")}
+                    className="rounded-md bg-white/10 p-1.5 text-gray-300 transition-colors hover:bg-white/20 hover:text-white"
+                    aria-label="Copy reference"
+                  >
+                    {copiedField === "reference" ? (
+                      <svg className="h-4 w-4 text-[#7FF41A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              {transferSubmitted ? (
+                <>
+                  <p className="text-xs text-gray-300">
+                    Submitted. You and admin have been emailed. We are now verifying your transfer.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full bg-[#7FF41A] text-[#0f0a19] hover:bg-[#6ad815]"
+                  >
+                    Done
+                  </Button>
+                </>
+              ) : (
+                <form onSubmit={handleTransferSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="transferReference" className="block text-sm font-medium text-gray-300 mb-2">
+                      Transfer Narration / Receipt Ref <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="transferReference"
+                      name="transferReference"
+                      value={formData.transferReference || ""}
+                      onChange={handleChange}
+                      placeholder="Uses your HCL ref by default; edit if your bank gave a different one"
+                      disabled={isSubmitting}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7FF41A]/50 focus:ring-1 focus:ring-[#7FF41A]/50"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      We prefilled your HCL reference. If your bank generated a different narration/reference, replace it here.
+                    </p>
+                  </div>
+                  <div>
+                    <label htmlFor="proofUrl" className="block text-sm font-medium text-gray-300 mb-2">
+                      Receipt proof (optional)
+                    </label>
+                    <div className="mb-2">
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300 hover:bg-white/10">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleProofUpload}
+                          disabled={isSubmitting || isUploadingProof}
+                        />
+                        {isUploadingProof ? "Uploading receipt..." : "Upload receipt image"}
+                      </label>
+                    </div>
+                    <input
+                      type="url"
+                      id="proofUrl"
+                      name="proofUrl"
+                      value={formData.proofUrl}
+                      onChange={handleChange}
+                      placeholder="Uploaded URL appears here (or paste manually)"
+                      disabled={isSubmitting}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7FF41A]/50 focus:ring-1 focus:ring-[#7FF41A]/50"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="proofNote" className="block text-sm font-medium text-gray-300 mb-2">
+                      Proof note (optional)
+                    </label>
+                    <textarea
+                      id="proofNote"
+                      name="proofNote"
+                      rows={3}
+                      value={formData.proofNote}
+                      onChange={handleChange}
+                      placeholder="Sender name, transfer time, bank used..."
+                      disabled={isSubmitting}
+                      className="w-full resize-none bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#7FF41A]/50 focus:ring-1 focus:ring-[#7FF41A]/50"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    After transfer, submit this to trigger verification emails.
+                  </p>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#7FF41A] text-[#0f0a19] hover:bg-[#6ad815]"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit transfer proof"}
+                  </Button>
+                </form>
+              )}
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -305,7 +652,7 @@ export default function PaymentModal({ isOpen, onClose, program }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
               <p className="text-gray-400 text-xs">
-                Your payment is secured by Paystack. We never store your card details.
+                Step 1: get bank details. Step 2: after transfer, submit your transfer reference and proof.
               </p>
             </div>
 
@@ -325,7 +672,7 @@ export default function PaymentModal({ isOpen, onClose, program }) {
                 </>
               ) : (
                 <>
-                  Proceed to Payment
+                  Continue to Bank Details
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
@@ -333,14 +680,13 @@ export default function PaymentModal({ isOpen, onClose, program }) {
               )}
             </Button>
           </form>
+          )}
 
           {/* Payment Methods */}
           <div className="mt-6 pt-4 border-t border-white/10">
             <p className="text-center text-gray-500 text-xs mb-3">Accepted payment methods</p>
             <div className="flex items-center justify-center gap-4">
-              <span className="text-gray-400 text-xs bg-white/5 px-3 py-1 rounded-full">Cards</span>
-              <span className="text-gray-400 text-xs bg-white/5 px-3 py-1 rounded-full">Bank Transfer</span>
-              <span className="text-gray-400 text-xs bg-white/5 px-3 py-1 rounded-full">USSD</span>
+              <span className="text-gray-300 text-xs bg-white/10 px-3 py-1 rounded-full">Bank Transfer (active)</span>
             </div>
           </div>
         </div>

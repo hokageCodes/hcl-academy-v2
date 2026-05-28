@@ -4,6 +4,79 @@ import Payment from "@/lib/models/Payment";
 import { smartRateLimit } from "@/lib/rateLimit";
 import { schedulePaymentEmailNotification } from "@/lib/paymentNotifications";
 import { koboToNaira } from "@/lib/programs";
+import { logError } from "@/lib/logger";
+
+/** Brief pause so Paystack webhook can mark the payment first (primary path). */
+async function waitForWebhookCompletion(reference, { attempts = 6, delayMs = 1000 } = {}) {
+  for (let i = 0; i < attempts; i++) {
+    const payment = await Payment.findByReference(reference);
+    if (!payment || payment.status !== "pending") return payment;
+    if (i < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  return Payment.findByReference(reference);
+}
+
+async function verifyWithPaystack(reference, payment) {
+  const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
+  if (!paystackSecretKey) {
+    return { error: "unavailable", status: 503 };
+  }
+
+  const paystackResponse = await fetch(
+    `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${paystackSecretKey}`,
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.timeout(20000),
+    }
+  );
+
+  const paystackData = await paystackResponse.json();
+
+  if (!paystackResponse.ok || !paystackData.status) {
+    return { pending: true };
+  }
+
+  const { data } = paystackData;
+
+  if (data.status === "success") {
+    await payment.markAsCompleted(data);
+    if (data.amount && data.amount !== payment.amount) {
+      payment.amount = data.amount;
+      await payment.save();
+    }
+    schedulePaymentEmailNotification(payment.reference);
+    return { success: true, payment };
+  }
+
+  if (data.status === "abandoned") {
+    payment.status = "abandoned";
+    await payment.save();
+    return { abandoned: true };
+  }
+
+  if (data.status === "failed") {
+    await payment.markAsFailed(data.gateway_response || "Payment failed");
+    return { failed: true, message: data.gateway_response || "Payment failed" };
+  }
+
+  return { pending: true };
+}
+
+function respondCompleted(payment) {
+  if (!payment.confirmationEmailsSent) {
+    schedulePaymentEmailNotification(payment.reference);
+  }
+  return NextResponse.json({
+    success: true,
+    data: paymentToVerifyPayload(payment),
+  });
+}
 
 function paymentToVerifyPayload(payment) {
   return {
@@ -78,7 +151,7 @@ export async function GET(request) {
     await connectDB();
 
     // FIRST: Check our database (source of truth)
-    const payment = await Payment.findByReference(reference);
+    let payment = await Payment.findByReference(reference);
 
     if (!payment) {
       return NextResponse.json(
@@ -87,94 +160,57 @@ export async function GET(request) {
       );
     }
 
-    // If payment is already completed in our DB, return success immediately
-    // This is faster and doesn't rely on Paystack being available
+    // Webhook is the primary completion path; DB reflects that when it arrives.
     if (payment.status === "completed") {
-      if (!payment.confirmationEmailsSent) {
-        schedulePaymentEmailNotification(payment.reference);
-      }
-      return NextResponse.json({
-        success: true,
-        data: paymentToVerifyPayload(payment),
-      });
+      return respondCompleted(payment);
     }
 
-    // If payment is pending, verify with Paystack
     if (payment.status === "pending") {
-      const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
-      
-      if (!paystackSecretKey) {
-        return NextResponse.json(
-          { success: false, error: "Payment service unavailable" },
-          { status: 503 }
-        );
+      const afterWebhook = await waitForWebhookCompletion(reference);
+
+      if (afterWebhook?.status === "completed") {
+        return respondCompleted(afterWebhook);
       }
 
-      // Verify with Paystack
-      const paystackResponse = await fetch(
-        `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${paystackSecretKey}`,
-            "Content-Type": "application/json",
+      if (afterWebhook && afterWebhook.status !== "pending") {
+        payment = afterWebhook;
+      } else {
+        payment = afterWebhook || payment;
+      }
+
+      if (payment.status === "pending") {
+        const fallback = await verifyWithPaystack(reference, payment);
+
+        if (fallback.error === "unavailable") {
+          return NextResponse.json(
+            { success: false, error: "Payment service unavailable" },
+            { status: 503 }
+          );
+        }
+        if (fallback.success) {
+          return respondCompleted(fallback.payment);
+        }
+        if (fallback.abandoned) {
+          return NextResponse.json({
+            success: false,
+            data: { status: "abandoned", message: "Payment was abandoned" },
+          });
+        }
+        if (fallback.failed) {
+          return NextResponse.json({
+            success: false,
+            data: { status: "failed", message: fallback.message },
+          });
+        }
+
+        return NextResponse.json({
+          success: false,
+          data: {
+            status: "pending",
+            message: "Payment is still being processed",
           },
-          signal: AbortSignal.timeout(20000),
-        }
-      );
-
-      const paystackData = await paystackResponse.json();
-
-      if (paystackResponse.ok && paystackData.status) {
-        const { data } = paystackData;
-
-        // Update our database based on Paystack response
-        if (data.status === "success") {
-          await payment.markAsCompleted(data);
-
-          if (data.amount && data.amount !== payment.amount) {
-            payment.amount = data.amount;
-            await payment.save();
-          }
-
-          schedulePaymentEmailNotification(payment.reference);
-
-          return NextResponse.json({
-            success: true,
-            data: paymentToVerifyPayload(payment),
-          });
-        } else if (data.status === "abandoned") {
-          payment.status = "abandoned";
-          await payment.save();
-
-          return NextResponse.json({
-            success: false,
-            data: {
-              status: "abandoned",
-              message: "Payment was abandoned",
-            },
-          });
-        } else if (data.status === "failed") {
-          await payment.markAsFailed(data.gateway_response || "Payment failed");
-
-          return NextResponse.json({
-            success: false,
-            data: {
-              status: "failed",
-              message: data.gateway_response || "Payment failed",
-            },
-          });
-        }
+        });
       }
-
-      // Paystack verification failed or returned unexpected status
-      return NextResponse.json({
-        success: false,
-        data: {
-          status: "pending",
-          message: "Payment is still being processed",
-        },
-      });
     }
 
     // Payment exists but is in failed/abandoned/refunded state
@@ -188,7 +224,7 @@ export async function GET(request) {
       },
     });
   } catch (error) {
-    console.error("Payment verification error:", error);
+    logError("paystack-verify", error);
     return NextResponse.json(
       { success: false, error: "An unexpected error occurred" },
       { status: 500 }
